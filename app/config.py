@@ -5,6 +5,14 @@ Configuration settings for the Menu Image Analyzer application.
 import os
 from typing import Dict, Any
 
+# Load environment variables from .env file
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    # python-dotenv not installed, skip loading .env file
+    pass
+
 
 class Config:
     """Base configuration class."""
