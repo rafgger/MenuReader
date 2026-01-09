@@ -14,18 +14,20 @@ This implementation plan converts the Menu Image Analyzer design into a series o
   - Set up basic Flask application with routes and error handling
   - _Requirements: 6.1, 6.2, 6.3_
 
-- [ ]* 1.1 Write property test for project setup
+- [ ] 1.1 Write property test for project setup
+
   - **Property 13: API Security**
   - **Validates: Requirements 6.4**
 
-- [ ] 2. Implement core data models and interfaces
+- [x] 2. Implement core data models and interfaces
   - Create Pydantic models for Dish, EnrichedDish, FoodImage, and DishDescription
   - Implement ProcessingState and ProcessingError dataclasses for state management
   - Create API configuration classes for external services
   - Set up request caching models for performance optimization using Python dictionaries
   - _Requirements: 2.1, 2.2, 3.1, 4.1_
 
-- [ ]* 2.1 Write property tests for data model validation
+- [x] 2.1 Write property tests for data model validation
+
   - **Property 1: File Format Validation**
   - **Validates: Requirements 1.1, 1.5**
 
@@ -37,15 +39,17 @@ This implementation plan converts the Menu Image Analyzer design into a series o
   - Add CSRF protection and secure file handling
   - _Requirements: 1.1, 1.2, 1.4, 1.5_
 
-- [ ]* 3.1 Write property test for camera integration
+- [ ] 3.1 Write property test for camera integration
+
   - **Property 2: Camera Integration**
   - **Validates: Requirements 1.2**
 
-- [ ]* 3.2 Write property test for progress feedback
+- [ ] 3.2 Write property test for progress feedback
+
   - **Property 4: Progress Feedback**
   - **Validates: Requirements 1.4, 7.2**
 
-- [ ] 4. Implement OCR service integration
+- [-] 4. Implement OCR service integration
   - Create OCRService class with external API integration
   - Implement text extraction with confidence scoring
   - Add language detection and multilingual support
@@ -53,7 +57,8 @@ This implementation plan converts the Menu Image Analyzer design into a series o
   - Create caching mechanism for OCR results
   - _Requirements: 1.3, 2.3_
 
-- [ ]* 4.1 Write property test for language-agnostic processing
+- [ ] 4.1 Write property test for language-agnostic processing
+
   - **Property 3: Language-Agnostic Processing**
   - **Validates: Requirements 1.3, 2.3**
 

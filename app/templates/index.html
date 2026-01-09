@@ -50,9 +50,40 @@
             cursor: pointer;
             font-size: 16px;
             transition: background-color 0.3s;
+            margin: 5px;
         }
         .upload-btn:hover {
             background-color: #0056b3;
+        }
+        .camera-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin: 5px;
+        }
+        .camera-btn:hover {
+            background-color: #218838;
+        }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        @media (max-width: 768px) {
+            .button-group {
+                flex-direction: column;
+                align-items: center;
+            }
+            .upload-btn, .camera-btn {
+                width: 200px;
+            }
         }
         .message {
             padding: 15px;
@@ -97,10 +128,16 @@
         <form id="uploadForm" enctype="multipart/form-data">
             <div class="upload-area" id="uploadArea">
                 <p>Drag and drop your menu image here, or</p>
-                <button type="button" class="upload-btn" onclick="document.getElementById('fileInput').click()">
-                    Choose File
-                </button>
+                <div class="button-group">
+                    <button type="button" class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        📁 Choose File
+                    </button>
+                    <button type="button" class="camera-btn" onclick="document.getElementById('cameraInput').click()">
+                        📷 Take Photo
+                    </button>
+                </div>
                 <input type="file" id="fileInput" name="file" accept="image/*">
+                <input type="file" id="cameraInput" name="file" accept="image/*" capture="environment">
                 <p style="margin-top: 15px; color: #666; font-size: 14px;">
                     Supported formats: JPEG, PNG, WebP (max 16MB)
                 </p>
@@ -121,6 +158,7 @@
     <script>
         const uploadArea = document.getElementById('uploadArea');
         const fileInput = document.getElementById('fileInput');
+        const cameraInput = document.getElementById('cameraInput');
         const uploadForm = document.getElementById('uploadForm');
         const messageArea = document.getElementById('messageArea');
         const progressBar = document.getElementById('progressBar');
@@ -147,8 +185,14 @@
             }
         });
 
-        // Handle file input change
+        // Handle file input change (both file picker and camera)
         fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        cameraInput.addEventListener('change', (e) => {
             if (e.target.files.length > 0) {
                 handleFileUpload(e.target.files[0]);
             }
@@ -167,6 +211,10 @@
                 showMessage('File size must be less than 16MB', 'error');
                 return;
             }
+
+            // Show file info
+            const fileSource = file.name.includes('IMG_') || file.name.includes('image') ? 'camera' : 'file';
+            showMessage(`Processing ${fileSource === 'camera' ? 'camera photo' : 'uploaded file'}: ${file.name}`, 'success');
 
             // Upload file
             uploadFile(file);
@@ -229,6 +277,21 @@
                     messageArea.style.display = 'none';
                 }, 5000);
             }
+        }
+
+        // Detect if user is on mobile device
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Update UI based on device capabilities
+        if (isMobileDevice()) {
+            // On mobile, make camera button more prominent
+            document.querySelector('.camera-btn').style.order = '-1';
+            
+            // Update text to be more mobile-friendly
+            const uploadText = document.querySelector('.upload-area p');
+            uploadText.textContent = 'Take a photo of your menu or choose from gallery';
         }
     </script>
 </body>

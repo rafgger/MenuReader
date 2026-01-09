@@ -40,6 +40,8 @@ class TestFlaskApp:
         response = client.get('/')
         assert response.status_code == 200
         assert b'Menu Image Analyzer' in response.data
+        assert b'Take Photo' in response.data
+        assert b'capture="environment"' in response.data
     
     def test_upload_no_file(self, client):
         """Test upload endpoint with no file."""
