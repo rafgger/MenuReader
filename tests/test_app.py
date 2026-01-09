@@ -76,8 +76,8 @@ class TestFlaskApp:
         assert response.status_code == 200
         
         response_data = response.get_json()
-        assert response_data['message'] == 'File uploaded successfully'
-        assert response_data['filename'] == 'test.jpg'
+        assert response_data['message'] == 'Image uploaded and processing started'
+        assert 'processing_id' in response_data
         assert response_data['status'] == 'processing'
     
     def test_404_error_handler(self, client):
@@ -100,13 +100,11 @@ class TestFlaskApp:
     def test_results_api_route(self, client):
         """Test results API route with processing ID."""
         response = client.get('/results/test-processing-id')
-        assert response.status_code == 200
+        assert response.status_code == 404  # No results stored for this ID
         
         data = response.get_json()
-        assert 'complete' in data
-        assert 'dishes' in data
-        assert 'processing_status' in data
-        assert 'errors' in data
+        assert 'error' in data
+        assert data['error'] == 'Results not found'
 
 
 class TestUtilityFunctions:
