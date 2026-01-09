@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Analysis Results - Menu Image Analyzer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .header .subtitle {
+            color: #666;
+            font-size: 16px;
+        }
+        
+        .back-button {
+            display: inline-block;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            transition: background-color 0.3s;
+        }
+        
+        .back-button:hover {
+            background-color: #5a6268;
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .dish-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .dish-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.15);
+        }
+        
+        .dish-header {
+            padding: 20px 20px 10px 20px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .dish-name {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 8px 0;
+            line-height: 1.3;
+        }
+        
+        .dish-price {
+            font-size: 18px;
+            font-weight: 700;
+            color: #28a745;
+            margin: 0;
+        }
+        
+        .dish-price.no-price {
+            color: #6c757d;
+            font-style: italic;
+            font-weight: 400;
+        }
+        
+        .image-section {
+            position: relative;
+        }
+        
+        .primary-image-container {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            overflow: hidden;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .primary-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.3s;
+        }
+        
+        .primary-image.loading {
+            opacity: 0.7;
+        }
+        
+        .image-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 14px;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .image-placeholder-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+        
+        .image-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.9);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .secondary-images {
+            padding: 15px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .secondary-images-label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .secondary-images-scroll {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            scrollbar-width: thin;
+            scrollbar-color: #ccc transparent;
+        }
+        
+        .secondary-images-scroll::-webkit-scrollbar {
+            height: 6px;
+        }
+        
+        .secondary-images-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .secondary-images-scroll::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
+        }
+        
+        .secondary-images-scroll::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+        
+        .secondary-image {
+            flex-shrink: 0;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .secondary-image:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .secondary-image.active {
+            border-color: #007bff;
+        }
+        
+        .description-section {
+            padding: 20px;
+        }
+        
+        .description-text {
+            color: #555;
+            font-size: 15px;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .description-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .detail-tag {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .detail-tag.cuisine {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .detail-tag.spice {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .detail-tag.dietary {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .no-results-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+        
+        .error-message {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .processing-status {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        /* Mobile responsive design */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+            
+            .results-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .dish-card {
+                margin-bottom: 0;
+            }
+            
+            .dish-name {
+                font-size: 18px;
+            }
+            
+            .dish-price {
+                font-size: 16px;
+            }
+            
+            .primary-image-container {
+                height: 200px;
+            }
+            
+            .secondary-image {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .description-section {
+                padding: 15px;
+            }
+            
+            .description-text {
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .dish-header {
+                padding: 15px 15px 8px 15px;
+            }
+            
+            .dish-name {
+                font-size: 16px;
+            }
+            
+            .dish-price {
+                font-size: 15px;
+            }
+            
+            .primary-image-container {
+                height: 180px;
+            }
+            
+            .secondary-images {
+                padding: 10px;
+            }
+            
+            .secondary-image {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .description-section {
+                padding: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="/" class="back-button">← Analyze Another Menu</a>
+            <h1>Menu Analysis Results</h1>
+            <div class="subtitle">{{ dishes|length }} dish{{ 'es' if dishes|length != 1 else '' }} found</div>
+        </div>
+        
+        {% if processing_status and processing_status != 'complete' %}
+        <div class="processing-status">
+            <strong>Processing Status:</strong> {{ processing_status|title }}
+            {% if progress %}({{ progress }}% complete){% endif %}
+        </div>
+        {% endif %}
+        
+        {% if errors %}
+        <div class="error-message">
+            <strong>Processing Errors:</strong>
+            <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+            {% for error in errors %}
+                <li>{{ error.message }}</li>
+            {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+        
+        {% if dishes %}
+        <div class="results-grid">
+            {% for enriched_dish in dishes %}
+            <div class="dish-card" data-dish-id="{{ enriched_dish.dish.id }}">
+                <div class="dish-header">
+                    <h2 class="dish-name">{{ enriched_dish.dish.name }}</h2>
+                    <p class="dish-price {% if not enriched_dish.dish.price %}no-price{% endif %}">
+                        {% if enriched_dish.dish.price %}
+                            {{ enriched_dish.dish.price }}
+                        {% else %}
+                            Price not available
+                        {% endif %}
+                    </p>
+                </div>
+                
+                <div class="image-section">
+                    <div class="primary-image-container">
+                        {% if enriched_dish.images and enriched_dish.images.get('primary') %}
+                            <img src="{{ enriched_dish.images.primary.url }}" 
+                                 alt="{{ enriched_dish.dish.name }}"
+                                 class="primary-image"
+                                 onerror="this.parentElement.innerHTML='<div class=&quot;image-placeholder&quot;><div class=&quot;image-placeholder-icon&quot;>🍽️</div><div>Image not available</div></div>'"
+                                 onload="this.classList.remove('loading')">
+                        {% else %}
+                            <div class="image-placeholder">
+                                <div class="image-placeholder-icon">🍽️</div>
+                                <div>No image available</div>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if enriched_dish.images and enriched_dish.images.get('secondary') and enriched_dish.images.secondary|length > 0 %}
+                    <div class="secondary-images">
+                        <div class="secondary-images-label">More images:</div>
+                        <div class="secondary-images-scroll">
+                            {% for image in enriched_dish.images.secondary %}
+                            <img src="{{ image.thumbnail_url or image.url }}" 
+                                 alt="{{ enriched_dish.dish.name }}"
+                                 class="secondary-image"
+                                 onclick="switchPrimaryImage(this, '{{ image.url }}', '{{ enriched_dish.dish.id }}')"
+                                 onerror="this.style.display='none'">
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                {% if enriched_dish.description %}
+                <div class="description-section">
+                    <div class="description-text">{{ enriched_dish.description.text }}</div>
+                    
+                    <div class="description-details">
+                        {% if enriched_dish.description.cuisine_type %}
+                        <span class="detail-tag cuisine">{{ enriched_dish.description.cuisine_type }}</span>
+                        {% endif %}
+                        
+                        {% if enriched_dish.description.spice_level %}
+                        <span class="detail-tag spice">{{ enriched_dish.description.spice_level|title }} Spice</span>
+                        {% endif %}
+                        
+                        {% for dietary in enriched_dish.description.dietary_restrictions %}
+                        <span class="detail-tag dietary">{{ dietary }}</span>
+                        {% endfor %}
+                        
+                        {% if enriched_dish.description.preparation_method %}
+                        <span class="detail-tag">{{ enriched_dish.description.preparation_method }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="no-results">
+            <div class="no-results-icon">📋</div>
+            <h2>No dishes found</h2>
+            <p>We couldn't identify any menu items in your image. Please try:</p>
+            <ul style="text-align: left; display: inline-block; margin-top: 15px;">
+                <li>Taking a clearer photo with better lighting</li>
+                <li>Ensuring the menu text is clearly visible</li>
+                <li>Uploading a higher resolution image</li>
+                <li>Making sure the menu is in focus</li>
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function switchPrimaryImage(clickedImg, newSrc, dishId) {
+            // Find the primary image container for this dish
+            const dishCard = document.querySelector(`[data-dish-id="${dishId}"]`);
+            const primaryImageContainer = dishCard.querySelector('.primary-image-container');
+            const primaryImage = primaryImageContainer.querySelector('.primary-image');
+            
+            if (primaryImage) {
+                // Update primary image source
+                primaryImage.src = newSrc;
+                primaryImage.classList.add('loading');
+                
+                // Update active state of secondary images
+                const secondaryImages = dishCard.querySelectorAll('.secondary-image');
+                secondaryImages.forEach(img => img.classList.remove('active'));
+                clickedImg.classList.add('active');
+            }
+        }
+        
+        // Initialize first secondary image as active for each dish
+        document.addEventListener('DOMContentLoaded', function() {
+            const dishCards = document.querySelectorAll('.dish-card');
+            dishCards.forEach(card => {
+                const firstSecondaryImage = card.querySelector('.secondary-image');
+                if (firstSecondaryImage) {
+                    firstSecondaryImage.classList.add('active');
+                }
+            });
+        });
+        
+        // Handle image loading states
+        document.addEventListener('DOMContentLoaded', function() {
+            const primaryImages = document.querySelectorAll('.primary-image');
+            primaryImages.forEach(img => {
+                img.classList.add('loading');
+                
+                img.addEventListener('load', function() {
+                    this.classList.remove('loading');
+                });
+                
+                img.addEventListener('error', function() {
+                    this.classList.remove('loading');
+                });
+            });
+        });
+        
+        // Smooth scrolling for secondary images on mobile
+        document.addEventListener('DOMContentLoaded', function() {
+            const scrollContainers = document.querySelectorAll('.secondary-images-scroll');
+            
+            scrollContainers.forEach(container => {
+                let isDown = false;
+                let startX;
+                let scrollLeft;
+                
+                container.addEventListener('mousedown', (e) => {
+                    isDown = true;
+                    container.style.cursor = 'grabbing';
+                    startX = e.pageX - container.offsetLeft;
+                    scrollLeft = container.scrollLeft;
+                });
+                
+                container.addEventListener('mouseleave', () => {
+                    isDown = false;
+                    container.style.cursor = 'grab';
+                });
+                
+                container.addEventListener('mouseup', () => {
+                    isDown = false;
+                    container.style.cursor = 'grab';
+                });
+                
+                container.addEventListener('mousemove', (e) => {
+                    if (!isDown) return;
+                    e.preventDefault();
+                    const x = e.pageX - container.offsetLeft;
+                    const walk = (x - startX) * 2;
+                    container.scrollLeft = scrollLeft - walk;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

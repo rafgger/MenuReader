@@ -87,6 +87,26 @@ class TestFlaskApp:
         
         data = response.get_json()
         assert data['error'] == 'Not found'
+    
+    def test_results_page_route(self, client):
+        """Test results page route."""
+        response = client.get('/results')
+        assert response.status_code == 200
+        
+        # Check that the response contains HTML
+        assert b'<!DOCTYPE html>' in response.data
+        assert b'Menu Analysis Results' in response.data
+    
+    def test_results_api_route(self, client):
+        """Test results API route with processing ID."""
+        response = client.get('/results/test-processing-id')
+        assert response.status_code == 200
+        
+        data = response.get_json()
+        assert 'complete' in data
+        assert 'dishes' in data
+        assert 'processing_status' in data
+        assert 'errors' in data
 
 
 class TestUtilityFunctions:
