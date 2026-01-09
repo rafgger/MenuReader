@@ -2,8 +2,8 @@
 Menu Processor - Main orchestration service for Menu Image Analyzer.
 
 This module provides the MenuProcessor class that orchestrates the complete
-workflow from image upload to enriched dish results with progress tracking
-and comprehensive error handling.
+workflow from image upload to enriched dish results with progress tracking,
+comprehensive error handling, and secure API client integration.
 """
 
 import os
@@ -19,6 +19,7 @@ from app.models.data_models import (
     ProcessingError, ErrorType, OCRResult, ParsedDish, FoodImage, DishDescription,
     RequestCache
 )
+from app.services.secure_api_client import SecureAPIClient, APIProvider
 from app.services.ocr_service import OCRService
 from app.services.google_vision_ocr_service import GoogleVisionOCRService
 from app.services.menu_parser import MenuParser
@@ -31,36 +32,28 @@ logger = logging.getLogger(__name__)
 
 class MenuProcessor:
     """
-    Main orchestration service for menu image analysis.
+    Main orchestration service for menu image analysis with secure API integration.
     
     Coordinates OCR, parsing, image search, and AI description generation
-    with progress tracking, error handling, and state management.
+    with progress tracking, error handling, state management, and secure API access.
     """
     
     def __init__(self, 
-                 ocr_api_key: Optional[str] = None,
-                 image_search_api_key: Optional[str] = None,
-                 image_search_engine_id: Optional[str] = None,
-                 openai_api_key: Optional[str] = None,
+                 api_client: Optional[SecureAPIClient] = None,
                  cache: Optional[RequestCache] = None):
         """
-        Initialize the menu processor with API credentials.
+        Initialize the menu processor with secure API client.
         
         Args:
-            ocr_api_key: API key for OCR service
-            image_search_api_key: Google Custom Search API key
-            image_search_engine_id: Google Custom Search Engine ID
-            openai_api_key: OpenAI API key for descriptions
+            api_client: Secure API client for external service communication
             cache: Optional shared cache instance
         """
+        self.api_client = api_client or SecureAPIClient()
         self.cache = cache or RequestCache()
         self.logger = logging.getLogger(__name__)
         
-        # Initialize services
-        self._initialize_services(
-            ocr_api_key, image_search_api_key, 
-            image_search_engine_id, openai_api_key
-        )
+        # Initialize services with secure API client
+        self._initialize_services()
         
         # Processing state management
         self.processing_states: Dict[str, ProcessingState] = {}
@@ -73,49 +66,45 @@ class MenuProcessor:
         self.max_concurrent_enrichment = 3
         self.processing_timeout = 300  # 5 minutes
         
-    def _initialize_services(self, ocr_api_key: Optional[str], 
-                           image_search_api_key: Optional[str],
-                           image_search_engine_id: Optional[str],
-                           openai_api_key: Optional[str]) -> None:
-        """Initialize all external services."""
+        # Log initialization status
+        self._log_service_status()
+        
+    def _initialize_services(self) -> None:
+        """Initialize all external services with secure API client."""
         try:
-            # Initialize OCR service (prefer Google Vision if available)
-            if ocr_api_key:
-                # Use generic OCR service with API key
+            # Initialize OCR service
+            if self.api_client.is_configured(APIProvider.GOOGLE_VISION):
+                self.ocr_service = GoogleVisionOCRService(cache=self.cache)
+                self.logger.info("Using Google Vision OCR with secure API client")
+            else:
+                # Fallback to generic OCR service
                 self.ocr_service = OCRService(
-                    api_key=ocr_api_key,
+                    api_key=os.getenv('OCR_API_KEY', ''),
                     cache=self.cache
                 )
-            else:
-                # Try Google Vision with service account first
-                try:
-                    self.ocr_service = GoogleVisionOCRService(cache=self.cache)
-                    self.logger.info("Using Google Vision OCR with service account")
-                except Exception as e:
-                    self.logger.warning(f"Google Vision OCR not available: {e}")
-                    # Fallback to generic OCR service
-                    self.ocr_service = OCRService(
-                        api_key=os.getenv('OCR_API_KEY', ''),
-                        cache=self.cache
-                    )
+                self.logger.warning("Google Vision not configured, using fallback OCR")
             
             # Initialize menu parser
             self.menu_parser = MenuParser()
             
             # Initialize image search service
-            if image_search_api_key and image_search_engine_id:
+            if self.api_client.is_configured(APIProvider.GOOGLE_SEARCH):
+                credentials = self.api_client.credentials[APIProvider.GOOGLE_SEARCH]
                 self.image_search_service = ImageSearchService(
-                    api_key=image_search_api_key,
-                    search_engine_id=image_search_engine_id,
+                    api_key=credentials.api_key,
+                    search_engine_id=credentials.additional_params.get('engine_id', ''),
                     cache=self.cache
                 )
+                self.logger.info("Image search service initialized with secure API client")
             else:
                 self.image_search_service = None
                 self.logger.warning("Image search service not available - missing credentials")
             
             # Initialize description service
-            if openai_api_key:
-                self.description_service = DescriptionService(api_key=openai_api_key)
+            if self.api_client.is_configured(APIProvider.OPENAI):
+                credentials = self.api_client.credentials[APIProvider.OPENAI]
+                self.description_service = DescriptionService(api_key=credentials.api_key)
+                self.logger.info("Description service initialized with secure API client")
             else:
                 self.description_service = None
                 self.logger.warning("Description service not available - missing OpenAI API key")
@@ -124,11 +113,21 @@ class MenuProcessor:
             self.logger.error(f"Error initializing services: {str(e)}")
             raise
     
+    def _log_service_status(self) -> None:
+        """Log the status of all services for debugging."""
+        provider_status = self.api_client.get_provider_status()
+        
+        for provider, status in provider_status.items():
+            if status['configured']:
+                self.logger.info(f"{provider} API: Configured ({status['api_key_masked']})")
+            else:
+                self.logger.warning(f"{provider} API: Not configured - {status.get('error', 'Unknown error')}")
+    
     def process_menu(self, image_data: bytes, 
                     processing_id: Optional[str] = None,
                     progress_callback: Optional[Callable[[ProcessingState], None]] = None) -> MenuAnalysisResult:
         """
-        Process a menu image through the complete analysis pipeline.
+        Process a menu image through the complete analysis pipeline with security.
         
         Args:
             image_data: Raw image bytes
@@ -156,7 +155,17 @@ class MenuProcessor:
                 self.progress_callbacks[processing_id] = progress_callback
         
         try:
-            self.logger.info(f"Starting menu processing for ID: {processing_id}")
+            self.logger.info(f"Starting secure menu processing for ID: {processing_id}")
+            
+            # Validate image data security
+            if not self._validate_image_security(image_data):
+                error = ProcessingError(
+                    type=ErrorType.PARSING,
+                    message="Image data failed security validation",
+                    recoverable=False
+                )
+                self._add_error(processing_id, error)
+                return self._create_failed_result(processing_id, [error])
             
             # Step 1: OCR Text Extraction
             self._update_progress(processing_id, ProcessingStep.OCR, 10)
@@ -202,13 +211,13 @@ class MenuProcessor:
                 success=len(enriched_dishes) > 0
             )
             
-            self.logger.info(f"Menu processing completed for ID: {processing_id}. "
+            self.logger.info(f"Secure menu processing completed for ID: {processing_id}. "
                            f"Found {len(enriched_dishes)} dishes in {processing_time:.2f}s")
             
             return result
             
         except Exception as e:
-            self.logger.error(f"Menu processing failed for ID: {processing_id}: {str(e)}")
+            self.logger.error(f"Menu processing failed for ID: {processing_id}: {str(e)}", exc_info=True)
             error = ProcessingError(
                 type=ErrorType.NETWORK,
                 message=f"Processing failed: {str(e)}",
@@ -222,6 +231,51 @@ class MenuProcessor:
             with self.state_lock:
                 self.processing_states.pop(processing_id, None)
                 self.progress_callbacks.pop(processing_id, None)
+    
+    def _validate_image_security(self, image_data: bytes) -> bool:
+        """
+        Validate image data for security concerns.
+        
+        Args:
+            image_data: Raw image bytes
+            
+        Returns:
+            True if image passes security validation
+        """
+        try:
+            # Check minimum size
+            if len(image_data) < 100:
+                self.logger.warning("Image data too small for security validation")
+                return False
+            
+            # Check maximum size (prevent DoS)
+            max_size = 50 * 1024 * 1024  # 50MB
+            if len(image_data) > max_size:
+                self.logger.warning(f"Image data too large: {len(image_data)} bytes")
+                return False
+            
+            # Check for valid image headers
+            valid_headers = [
+                b'\xFF\xD8\xFF',  # JPEG
+                b'\x89PNG\r\n\x1a\n',  # PNG
+                b'RIFF',  # WebP (starts with RIFF)
+            ]
+            
+            has_valid_header = any(image_data.startswith(header) for header in valid_headers)
+            if not has_valid_header:
+                self.logger.warning("Image data does not have valid image header")
+                return False
+            
+            # Additional WebP validation
+            if image_data.startswith(b'RIFF') and b'WEBP' not in image_data[:20]:
+                self.logger.warning("RIFF file is not WebP format")
+                return False
+            
+            return True
+            
+        except Exception as e:
+            self.logger.error(f"Image security validation failed: {e}")
+            return False
     
     def _perform_ocr(self, image_data: bytes, processing_id: str) -> Optional[OCRResult]:
         """
@@ -499,26 +553,37 @@ class MenuProcessor:
         
         return False
     
+    
     def get_service_status(self) -> Dict[str, Any]:
         """
-        Get status information about all services.
+        Get status information about all services with security information.
         
         Returns:
             Dictionary with service status information
         """
+        # Get API client status
+        provider_status = self.api_client.get_provider_status()
+        security_info = self.api_client.get_security_info()
+        
         status = {
             'ocr_service': {
                 'available': bool(self.ocr_service),
-                'type': type(self.ocr_service).__name__ if self.ocr_service else None
+                'type': type(self.ocr_service).__name__ if self.ocr_service else None,
+                'api_configured': APIProvider.GOOGLE_VISION.value in provider_status and 
+                               provider_status[APIProvider.GOOGLE_VISION.value]['configured']
             },
             'image_search_service': {
                 'available': bool(self.image_search_service),
+                'api_configured': APIProvider.GOOGLE_SEARCH.value in provider_status and 
+                               provider_status[APIProvider.GOOGLE_SEARCH.value]['configured'],
                 'statistics': self.image_search_service.get_search_statistics() 
                             if self.image_search_service else None
             },
             'description_service': {
                 'available': self.description_service.is_available() 
                            if self.description_service else False,
+                'api_configured': APIProvider.OPENAI.value in provider_status and 
+                               provider_status[APIProvider.OPENAI.value]['configured'],
                 'info': self.description_service.get_service_info() 
                        if self.description_service else None
             },
@@ -527,14 +592,37 @@ class MenuProcessor:
                 'image_search_results': len(self.cache.image_search_results),
                 'descriptions': len(self.cache.descriptions)
             },
-            'active_processing': len(self.processing_states)
+            'active_processing': len(self.processing_states),
+            'security': {
+                'ssl_verification': security_info.get('ssl_verification', True),
+                'rate_limiting_enabled': bool(security_info.get('rate_limiting_enabled', False)),
+                'configured_providers': [p.value for p in security_info.get('configured_providers', [])]
+            }
         }
         
         return status
     
+    def validate_api_credentials(self) -> Dict[str, bool]:
+        """
+        Validate all API credentials using the secure API client.
+        
+        Returns:
+            Dictionary with validation results for each service
+        """
+        try:
+            return self.api_client.validate_all_credentials()
+        except Exception as e:
+            self.logger.error(f"API credential validation failed: {e}")
+            return {
+                'google_vision': False,
+                'google_search': False,
+                'openai': False
+            }
+    
     def clear_cache(self) -> None:
-        """Clear all service caches."""
+        """Clear all service caches and API client history."""
         self.cache.clear()
         if self.image_search_service:
             self.image_search_service.clear_cache()
-        self.logger.info("All caches cleared")
+        self.api_client.clear_request_history()
+        self.logger.info("All caches and API history cleared")

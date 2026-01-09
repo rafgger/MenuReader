@@ -2,6 +2,10 @@
 flask==3.1.2
 werkzeug==3.1.5
 
+# Security and CORS
+flask-cors==5.0.0
+flask-limiter==3.8.0
+
 # Environment variables
 python-dotenv==1.0.1
 
@@ -11,8 +15,9 @@ pydantic==2.12.5
 # Image processing
 pillow==12.1.0
 
-# HTTP requests
+# HTTP requests with security
 requests==2.32.5
+urllib3==2.2.3
 
 # AI/ML APIs
 openai==1.58.1
@@ -27,3 +32,6 @@ markupsafe==3.0.3
 itsdangerous==2.2.0
 click==8.3.1
 blinker==1.9.0
+
+# Redis for production rate limiting (optional)
+redis==5.2.1
