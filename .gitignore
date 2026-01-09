@@ -69,3 +69,8 @@ uploads/
 # Temporary files
 *.tmp
 *.temp
+
+# Google Cloud credentials
+google-vision-service-account.json
+*service-account*.json
+*.json
