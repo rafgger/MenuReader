@@ -9,6 +9,7 @@ from typing import List, Optional, Dict, Any
 from enum import Enum
 from pydantic import BaseModel, Field
 import uuid
+import time
 from datetime import datetime
 
 
@@ -51,12 +52,12 @@ class ProcessingState:
     current_step: ProcessingStep
     progress: int  # 0-100
     errors: List[ProcessingError]
-    start_time: str
+    start_time: float
     estimated_completion: Optional[str] = None
     
     def __post_init__(self):
         if not self.start_time:
-            self.start_time = datetime.now().isoformat()
+            self.start_time = time.time()
 
 
 class Dish(BaseModel):
