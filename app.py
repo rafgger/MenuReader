@@ -425,8 +425,10 @@ if __name__ == "__main__":
         )
     else:
         logger.info("Running locally")
+        # Use environment variable to control debug mode (default: False for production)
+        debug_mode = os.getenv("DEBUG", "false").lower() == "true"
         demo.launch(
             share=False,
             show_error=True,
-            debug=True
+            debug=debug_mode
         )
