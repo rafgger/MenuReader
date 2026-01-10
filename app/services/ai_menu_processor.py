@@ -329,16 +329,18 @@ class AIMenuProcessor:
                 confidence=parsed_dish.confidence
             )
             
-            # Search for images
+            # Search for images using simplified dish name (before first comma)
             images = {}
             if self.image_search_service:
                 try:
+                    # Use only the part before the first comma for better image search results
+                    search_name = dish.name.split(',')[0].strip()
                     food_images = self.image_search_service.search_food_images(
-                        dish.name, max_results=5
+                        search_name, max_results=5
                     )
                     if food_images:
-                        images['primary'] = food_images[0]
-                        images['secondary'] = food_images[1:] if len(food_images) > 1 else []
+                        images['primary'] = food_images[0].model_dump()
+                        images['secondary'] = [img.model_dump() for img in food_images[1:]] if len(food_images) > 1 else []
                     else:
                         images['placeholder'] = True
                 except Exception as e:
@@ -354,7 +356,7 @@ class AIMenuProcessor:
                     description = self.description_service.generate_description(
                         dish.name, dish.price
                     )
-                except Exception as e:
+                except Exception as e: 
                     self.logger.warning(f"Description generation failed for '{dish.name}': {str(e)}")
             
             # Create enriched dish

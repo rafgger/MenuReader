@@ -90,65 +90,80 @@ def format_results_html(dishes: List[EnrichedDish], errors: List[ProcessingError
         Formatted HTML string
     """
     if not dishes:
-        return "❌ **No dishes found**. Please try uploading a clearer image of the menu."
+        return "<p style='color: red;'>❌ <strong>No dishes found</strong>. Please try uploading a clearer image of the menu.</p>"
     
-    html_parts = [f"✅ **Found {len(dishes)} dishes:**\n"]
+    html_parts = [f"<p style='color: green;'>✅ <strong>Found {len(dishes)} dishes:</strong></p>"]
     
     for i, enriched_dish in enumerate(dishes, 1):
         dish = enriched_dish.dish
         description = enriched_dish.description
         images = enriched_dish.images
         
+        # Start dish container
+        html_parts.append(f"<div style='border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px;'>")
+        
         # Dish header
-        html_parts.append(f"\n### {i}. {dish.name}")
+        html_parts.append(f"<h3>{i}. {dish.name}</h3>")
         
         # Price
         if dish.price:
-            html_parts.append(f"**Price:** {dish.price}")
+            html_parts.append(f"<p><strong>Price:</strong> {dish.price}</p>")
         
         # Primary image
         if images and images.get('primary'):
             primary_image = images['primary']
             if isinstance(primary_image, dict) and primary_image.get('url'):
-                html_parts.append(f"![{dish.name}]({primary_image['url']})")
+                html_parts.append(f"<p><strong>Main Image:</strong></p>")
+                html_parts.append(f"<img src='{primary_image['url']}' alt='{dish.name}' style='max-width: 300px; height: auto; border-radius: 5px; margin: 10px 0;'>")
+        
+        # Secondary/Alternative images
+        if images and images.get('secondary') and len(images['secondary']) > 0:
+            html_parts.append(f"<p><strong>Alternative Images:</strong></p>")
+            html_parts.append("<div style='display: flex; flex-wrap: wrap; gap: 10px;'>")
+            for idx, secondary_image in enumerate(images['secondary'][:3], 1):  # Show up to 3 alternatives
+                if isinstance(secondary_image, dict) and secondary_image.get('url'):
+                    html_parts.append(f"<img src='{secondary_image['url']}' alt='{dish.name} - Alternative {idx}' style='max-width: 150px; height: auto; border-radius: 5px;'>")
+            html_parts.append("</div>")
+            
+            if len(images['secondary']) > 3:
+                html_parts.append(f"<p><em>({len(images['secondary']) - 3} more images available)</em></p>")
         
         # Description
         if description and description.text:
-            html_parts.append(f"**Description:** {description.text}")
+            html_parts.append(f"<p><strong>Description:</strong> {description.text}</p>")
             
             # Additional details
             if description.ingredients:
                 ingredients_str = ", ".join(description.ingredients[:5])  # Limit to first 5
                 if len(description.ingredients) > 5:
                     ingredients_str += f" (and {len(description.ingredients) - 5} more)"
-                html_parts.append(f"**Key Ingredients:** {ingredients_str}")
+                html_parts.append(f"<p><strong>Key Ingredients:</strong> {ingredients_str}</p>")
             
             if description.dietary_restrictions:
                 dietary_str = ", ".join(description.dietary_restrictions)
-                html_parts.append(f"**Dietary Info:** {dietary_str}")
+                html_parts.append(f"<p><strong>Dietary Info:</strong> {dietary_str}</p>")
             
             if description.cuisine_type:
-                html_parts.append(f"**Cuisine:** {description.cuisine_type}")
+                html_parts.append(f"<p><strong>Cuisine:</strong> {description.cuisine_type}</p>")
             
             if description.spice_level:
-                html_parts.append(f"**Spice Level:** {description.spice_level}")
-        
-        # Secondary images
-        if images and images.get('secondary') and len(images['secondary']) > 0:
-            html_parts.append(f"**Additional Images:** {len(images['secondary'])} more images available")
+                html_parts.append(f"<p><strong>Spice Level:</strong> {description.spice_level}</p>")
         
         # Confidence score
         if dish.confidence < 0.8:
-            html_parts.append(f"*Note: Low confidence extraction ({dish.confidence:.1%})*")
+            html_parts.append(f"<p><em>Note: Low confidence extraction ({dish.confidence:.1%})</em></p>")
         
-        html_parts.append("---")
+        # Close dish container
+        html_parts.append("</div>")
     
     # Add errors if any
     if errors:
-        html_parts.append("\n### ⚠️ Processing Notes:")
+        html_parts.append("<h3 style='color: orange;'>⚠️ Processing Notes:</h3>")
+        html_parts.append("<ul>")
         for error in errors:
             if error.recoverable:
-                html_parts.append(f"- {error.message}")
+                html_parts.append(f"<li>{error.message}</li>")
+        html_parts.append("</ul>")
     
     return "\n".join(html_parts)
 
@@ -352,10 +367,10 @@ def create_gradio_interface():
                 
                 with gr.Tabs():
                     with gr.TabItem("📖 Formatted Results"):
-                        results_output = gr.Markdown(
+                        results_output = gr.HTML(
                             label="Dish Information",
-                            value="Upload a menu image to see detailed dish information here.",
-                            elem_classes=["output-markdown"]
+                            value="<p>Upload a menu image to see detailed dish information here.</p>",
+                            elem_classes=["output-html"]
                         )
                     
                     with gr.TabItem("🔧 JSON Data"):
