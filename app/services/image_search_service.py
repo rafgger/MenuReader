@@ -259,26 +259,14 @@ class ImageSearchService:
         if not url or not url.startswith(('http://', 'https://')):
             return False
         
-        # Check file format
+        # Very lenient filtering - accept almost all images
+        # Only filter out obvious logos
+        title_lower = title.lower() if title else ""
         url_lower = url.lower()
-        if not any(fmt in url_lower for fmt in self.preferred_formats):
+        
+        # Only reject obvious non-food content
+        if 'logo' in title_lower:
             return False
-        
-        # Check minimum size
-        if width > 0 and height > 0:
-            if width < self.min_image_size or height < self.min_image_size:
-                return False
-        
-        # Check for unwanted content in title/URL
-        unwanted_terms = [
-            'logo', 'icon', 'banner', 'advertisement', 'ad',
-            'watermark', 'stock', 'clipart', 'cartoon'
-        ]
-        
-        title_lower = title.lower()
-        for term in unwanted_terms:
-            if term in title_lower or term in url_lower:
-                return False
         
         return True
     
