@@ -1,0 +1,1 @@
+# Menu Image Analyzer Flask Application

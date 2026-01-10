@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Image Analyzer</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .upload-area {
+            border: 2px dashed #ddd;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            transition: border-color 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+        }
+        .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        input[type="file"] {
+            display: none;
+        }
+        .upload-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin: 5px;
+        }
+        .upload-btn:hover {
+            background-color: #0056b3;
+        }
+        .camera-btn {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin: 5px;
+        }
+        .camera-btn:hover {
+            background-color: #218838;
+        }
+        .button-group {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px 0;
+        }
+        @media (max-width: 768px) {
+            .button-group {
+                flex-direction: column;
+                align-items: center;
+            }
+            .upload-btn, .camera-btn {
+                width: 200px;
+            }
+        }
+        .message {
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            display: none;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .progress {
+            width: 100%;
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 15px 0;
+            display: none;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: #007bff;
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        /* Results display styles */
+        .results-container {
+            margin-top: 30px;
+        }
+        
+        .dishes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .dish-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .dish-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .dish-header {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .dish-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin: 0 0 5px 0;
+        }
+        
+        .dish-price {
+            font-size: 16px;
+            font-weight: 700;
+            color: #28a745;
+            margin: 0;
+        }
+        
+        .dish-price.no-price {
+            color: #6c757d;
+            font-style: italic;
+            font-weight: 400;
+        }
+        
+        .dish-image-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+            background-color: #f8f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .dish-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .dish-image-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .dish-image-placeholder-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+            opacity: 0.5;
+        }
+        
+        .secondary-images-container {
+            padding: 10px 15px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .secondary-images-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .secondary-images-scroll {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+        
+        .secondary-image {
+            flex-shrink: 0;
+            width: 60px;
+            height: 60px;
+            border-radius: 6px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 2px solid transparent;
+        }
+        
+        .secondary-image:hover {
+            transform: scale(1.05);
+        }
+        
+        .secondary-image.active {
+            border-color: #007bff;
+        }
+        
+        .dish-description {
+            padding: 15px;
+        }
+        
+        .dish-description-text {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        
+        .dish-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+        
+        .dish-tag {
+            background-color: #e9ecef;
+            color: #495057;
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        
+        .dish-tag.cuisine {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .dish-tag.spice {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .dish-tag.dietary {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        @media (max-width: 768px) {
+            .dishes-grid {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .dish-image-container {
+                height: 180px;
+            }
+            
+            .secondary-image {
+                width: 50px;
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Menu Image Analyzer</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            Upload a photo of a restaurant menu to get detailed information about each dish
+        </p>
+        
+        <form id="uploadForm" enctype="multipart/form-data">
+            <div class="upload-area" id="uploadArea">
+                <p>Drag and drop your menu image here, or</p>
+                <div class="button-group">
+                    <button type="button" class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        📁 Choose File
+                    </button>
+                    <button type="button" class="camera-btn" onclick="document.getElementById('cameraInput').click()">
+                        📷 Take Photo
+                    </button>
+                </div>
+                <input type="file" id="fileInput" name="file" accept="image/*">
+                <input type="file" id="cameraInput" name="file" accept="image/*" capture="environment">
+                <p style="margin-top: 15px; color: #666; font-size: 14px;">
+                    Supported formats: JPEG, PNG, WebP (max 16MB)
+                </p>
+            </div>
+        </form>
+        
+        <div class="progress" id="progressBar">
+            <div class="progress-bar" id="progressBarFill"></div>
+        </div>
+        
+        <div class="message" id="messageArea"></div>
+        
+        <div id="resultsArea" style="margin-top: 30px; display: none;">
+            <!-- Results will be displayed here -->
+            <div class="results-container">
+                <h2 style="color: #333; margin-bottom: 20px;">Analysis Results</h2>
+                <div id="dishesGrid" class="dishes-grid">
+                    <!-- Dishes will be populated here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const cameraInput = document.getElementById('cameraInput');
+        const uploadForm = document.getElementById('uploadForm');
+        const messageArea = document.getElementById('messageArea');
+        const progressBar = document.getElementById('progressBar');
+        const progressBarFill = document.getElementById('progressBarFill');
+
+        // Handle drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                handleFileUpload(files[0]);
+            }
+        });
+
+        // Handle file input change (both file picker and camera)
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        cameraInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileUpload(e.target.files[0]);
+            }
+        });
+
+        function handleFileUpload(file) {
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+            if (!allowedTypes.includes(file.type)) {
+                showMessage('Please upload a JPEG, PNG, or WebP image', 'error');
+                return;
+            }
+
+            // Validate file size (16MB)
+            if (file.size > 16 * 1024 * 1024) {
+                showMessage('File size must be less than 16MB', 'error');
+                return;
+            }
+
+            // Show file info
+            const fileSource = file.name.includes('IMG_') || file.name.includes('image') ? 'camera' : 'file';
+            showMessage(`Processing ${fileSource === 'camera' ? 'camera photo' : 'uploaded file'}: ${file.name}`, 'success');
+
+            // Upload file
+            uploadFile(file);
+        }
+
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            // Show progress bar
+            progressBar.style.display = 'block';
+            progressBarFill.style.width = '0%';
+
+            // Simulate progress (since we don't have real progress tracking yet)
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 10;
+                progressBarFill.style.width = progress + '%';
+                if (progress >= 90) {
+                    clearInterval(progressInterval);
+                }
+            }, 200);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(progressInterval);
+                progressBarFill.style.width = '100%';
+                
+                setTimeout(() => {
+                    progressBar.style.display = 'none';
+                    
+                    if (data.error) {
+                        showMessage(data.message || 'Upload failed', 'error');
+                    } else {
+                        showMessage('Image uploaded successfully! Processing...', 'success');
+                        
+                        // Display results if available
+                        if (data.dishes && data.dishes.length > 0) {
+                            displayResults(data.dishes);
+                        } else if (data.processing_id) {
+                            // Poll for results if processing is async
+                            pollForResults(data.processing_id);
+                        }
+                    }
+                }, 500);
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                progressBar.style.display = 'none';
+                showMessage('Upload failed. Please try again.', 'error');
+                console.error('Upload error:', error);
+            });
+        }
+
+        function showMessage(text, type) {
+            messageArea.textContent = text;
+            messageArea.className = `message ${type}`;
+            messageArea.style.display = 'block';
+            
+            // Hide message after 5 seconds for success messages
+            if (type === 'success') {
+                setTimeout(() => {
+                    messageArea.style.display = 'none';
+                }, 5000);
+            }
+        }
+        
+        function displayResults(dishes) {
+            const resultsArea = document.getElementById('resultsArea');
+            const dishesGrid = document.getElementById('dishesGrid');
+            
+            if (!dishes || dishes.length === 0) {
+                dishesGrid.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #666;">
+                        <div style="font-size: 48px; margin-bottom: 15px;">📋</div>
+                        <h3>No dishes found</h3>
+                        <p>We couldn't identify any menu items in your image. Please try a clearer photo.</p>
+                    </div>
+                `;
+            } else {
+                dishesGrid.innerHTML = dishes.map(enrichedDish => createDishCard(enrichedDish)).join('');
+            }
+            
+            resultsArea.style.display = 'block';
+            resultsArea.scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function createDishCard(enrichedDish) {
+            const dish = enrichedDish.dish;
+            const images = enrichedDish.images || {};
+            const description = enrichedDish.description;
+            
+            const primaryImage = images.primary;
+            const secondaryImages = images.secondary || [];
+            
+            const priceDisplay = dish.price ? 
+                `<p class="dish-price">${dish.price}</p>` : 
+                `<p class="dish-price no-price">Price not available</p>`;
+            
+            const imageSection = primaryImage ? `
+                <div class="dish-image-container">
+                    <img src="${primaryImage.url}" 
+                         alt="${dish.name}"
+                         class="dish-image"
+                         onerror="this.parentElement.innerHTML='<div class=\\"dish-image-placeholder\\"><div class=\\"dish-image-placeholder-icon\\">🍽️</div><div>Image not available</div></div>'">
+                </div>
+            ` : `
+                <div class="dish-image-container">
+                    <div class="dish-image-placeholder">
+                        <div class="dish-image-placeholder-icon">🍽️</div>
+                        <div>No image available</div>
+                    </div>
+                </div>
+            `;
+            
+            const secondaryImagesSection = secondaryImages.length > 0 ? `
+                <div class="secondary-images-container">
+                    <div class="secondary-images-label">More images:</div>
+                    <div class="secondary-images-scroll">
+                        ${secondaryImages.map((image, index) => `
+                            <img src="${image.thumbnail_url || image.url}" 
+                                 alt="${dish.name}"
+                                 class="secondary-image ${index === 0 ? 'active' : ''}"
+                                 onclick="switchPrimaryImage(this, '${image.url}', '${dish.id}')"
+                                 onerror="this.style.display='none'">
+                        `).join('')}
+                    </div>
+                </div>
+            ` : '';
+            
+            const descriptionSection = description ? `
+                <div class="dish-description">
+                    <div class="dish-description-text">${description.text}</div>
+                    <div class="dish-tags">
+                        ${description.cuisine_type ? `<span class="dish-tag cuisine">${description.cuisine_type}</span>` : ''}
+                        ${description.spice_level ? `<span class="dish-tag spice">${description.spice_level} Spice</span>` : ''}
+                        ${description.dietary_restrictions ? description.dietary_restrictions.map(dietary => 
+                            `<span class="dish-tag dietary">${dietary}</span>`
+                        ).join('') : ''}
+                        ${description.preparation_method ? `<span class="dish-tag">${description.preparation_method}</span>` : ''}
+                    </div>
+                </div>
+            ` : '';
+            
+            return `
+                <div class="dish-card" data-dish-id="${dish.id}">
+                    <div class="dish-header">
+                        <h3 class="dish-name">${dish.name}</h3>
+                        ${priceDisplay}
+                    </div>
+                    ${imageSection}
+                    ${secondaryImagesSection}
+                    ${descriptionSection}
+                </div>
+            `;
+        }
+        
+        function switchPrimaryImage(clickedImg, newSrc, dishId) {
+            // Find the primary image for this dish
+            const dishCard = document.querySelector(`[data-dish-id="${dishId}"]`);
+            const primaryImage = dishCard.querySelector('.dish-image');
+            
+            if (primaryImage) {
+                // Update primary image source
+                primaryImage.src = newSrc;
+                
+                // Update active state of secondary images
+                const secondaryImages = dishCard.querySelectorAll('.secondary-image');
+                secondaryImages.forEach(img => img.classList.remove('active'));
+                clickedImg.classList.add('active');
+            }
+        }
+        
+        function pollForResults(processingId) {
+            // Poll for results every 2 seconds
+            const pollInterval = setInterval(() => {
+                fetch(`/results/${processingId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.complete) {
+                            clearInterval(pollInterval);
+                            displayResults(data.dishes);
+                            showMessage('Processing complete!', 'success');
+                        } else if (data.error) {
+                            clearInterval(pollInterval);
+                            showMessage(data.message || 'Processing failed', 'error');
+                        }
+                        // Continue polling if still processing
+                    })
+                    .catch(error => {
+                        console.error('Polling error:', error);
+                        // Continue polling on network errors
+                    });
+            }, 2000);
+            
+            // Stop polling after 5 minutes
+            setTimeout(() => {
+                clearInterval(pollInterval);
+                showMessage('Processing is taking longer than expected. Please try again.', 'error');
+            }, 300000);
+        }
+
+        // Detect if user is on mobile device
+        function isMobileDevice() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Update UI based on device capabilities
+        if (isMobileDevice()) {
+            // On mobile, make camera button more prominent
+            document.querySelector('.camera-btn').style.order = '-1';
+            
+            // Update text to be more mobile-friendly
+            const uploadText = document.querySelector('.upload-area p');
+            uploadText.textContent = 'Take a photo of your menu or choose from gallery';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# Core dependencies
+gradio>=4.0.0
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+pillow>=10.0.0
+requests>=2.31.0
+urllib3>=2.0.0
+
+# AI and API clients
+openai>=1.0.0
+httpx>=0.25.0
+
+# Image processing and search
+google-api-python-client>=2.0.0
+
+# Utilities
+python-multipart>=0.0.6
+typing-extensions>=4.8.0
