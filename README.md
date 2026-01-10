@@ -1,138 +1,111 @@
-# Menu Image Analyzer
+# 🍽️ AI Menu Analyzer
 
-A Flask-based web application that transforms menu photos into rich, visual dining guides. Upload a photo of a restaurant menu and get detailed information about each dish including images and AI-generated descriptions.
+Transform menu photos into rich, visual dining guides using AI vision models! Upload a photo of a restaurant menu and get detailed information about each dish including images and AI-generated descriptions.
 
-## Features
+## ✨ Features
 
-- **Image Upload**: Support for JPEG, PNG, and WebP formats
-- **OCR Processing**: Extract text from menu images in multiple languages
-- **Dish Extraction**: Identify individual food items and prices
-- **Image Search**: Find relevant food images for each dish
-- **AI Descriptions**: Generate informative descriptions with ingredients and dietary information
-- **Responsive UI**: Clean, mobile-friendly interface
+- **AI-Powered Menu Analysis**: Uses GPT-4o and Gemini Pro Vision for direct dish extraction
+- **Visual Food Discovery**: Automatically finds relevant food images for each dish
+- **Smart Descriptions**: AI-generated detailed descriptions with ingredients and dietary info
+- **Multi-Language Support**: Works with menus in multiple languages
+- **No OCR Required**: Direct AI vision analysis for better accuracy
 
-## Quick Start
+## 🚀 Live Demo
 
-### Using uv (Recommended)
+Try it now: [AI Menu Analyzer on Hugging Face Spaces](https://huggingface.co/spaces/your-username/ai-menu-analyzer)
 
+## 🛠️ Technology Stack
+
+- **Frontend**: Gradio for interactive web interface
+- **AI Models**: OpenAI GPT-4o, Google Gemini Pro Vision via OpenRouter
+- **Image Search**: Google Custom Search API
+- **Descriptions**: OpenAI GPT-3.5/4 for detailed dish descriptions
+- **Backend**: Python with Pydantic for type safety
+
+## 📋 Requirements
+
+- Python 3.9+
+- API Keys:
+  - OpenRouter API key (for AI vision models)
+  - Google Custom Search API key + Engine ID
+  - OpenAI API key (for descriptions)
+
+## 🔧 Local Development
+
+1. Clone the repository:
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd menu-image-analyzer
+git clone <your-repo-url>
+cd ai-menu-analyzer
+```
 
-# Install dependencies with uv
+2. Install dependencies:
+```bash
 uv sync
-
-# Run the application
-uv run python main.py
 ```
 
-### Using pip
-
+3. Set up environment variables:
 ```bash
-# Clone the repository
-git clone <repository-url>
-cd menu-image-analyzer
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the application
-python main.py
+cp .env.example .env
+# Edit .env with your API keys
 ```
 
-The application will be available at `http://localhost:5000`
-
-## Development
-
-### Project Structure
-
-```
-menu-image-analyzer/
-├── app/
-│   ├── __init__.py
-│   ├── app.py              # Main Flask application
-│   ├── config.py           # Configuration settings
-│   ├── models/
-│   │   ├── __init__.py
-│   │   └── data_models.py  # Pydantic data models
-│   ├── routes/
-│   │   └── __init__.py
-│   ├── services/
-│   │   └── __init__.py
-│   └── templates/
-│       └── index.html      # Main UI template
-├── tests/
-│   ├── __init__.py
-│   ├── conftest.py         # Test configuration
-│   └── test_app.py         # Application tests
-├── main.py                 # Application entry point
-├── pyproject.toml          # Project configuration
-├── requirements.txt        # Dependencies for deployment
-└── README.md
-```
-
-### Running Tests
-
+4. Run the application:
 ```bash
-# Run all tests
-uv run pytest
-
-# Run with coverage
-uv run pytest --cov=app
-
-# Run specific test file
-uv run pytest tests/test_app.py
+python app.py
 ```
+
+## 🌐 Deployment
+
+### Hugging Face Spaces
+
+This app is designed for easy deployment on Hugging Face Spaces:
+
+1. Create a new Space on Hugging Face
+2. Upload the code
+3. Set environment variables in Space settings
+4. The app will automatically deploy
 
 ### Environment Variables
 
-For production deployment, set these environment variables:
+Set these in your Hugging Face Space settings:
 
-- `FLASK_ENV`: Set to `production` for production deployment
-- `SECRET_KEY`: Flask secret key for session security
-- `OCR_API_KEY`: API key for OCR service
+- `OPENROUTER_API_KEY`: Your OpenRouter API key
 - `GOOGLE_SEARCH_API_KEY`: Google Custom Search API key
 - `GOOGLE_SEARCH_ENGINE_ID`: Google Custom Search Engine ID
 - `OPENAI_API_KEY`: OpenAI API key for descriptions
 
-## Deployment
+## 📁 Project Structure
 
-### Hugging Face Spaces
+```
+├── app/                    # Core application modules
+│   ├── models/            # Data models and schemas
+│   ├── services/          # Business logic services
+│   └── config.py          # Configuration management
+├── examples/              # Example images and usage
+├── app.py                 # Main Gradio application
+├── requirements.txt       # Python dependencies
+└── README.md             # This file
+```
 
-This application is designed to work with Hugging Face Spaces. The `requirements.txt` file and Flask structure are compatible with the platform.
+## 🔄 CI/CD Pipeline
 
-### Other Python Hosting Platforms
+The project includes GitHub Actions for:
+- Automated testing
+- Code quality checks
+- Automatic deployment to Hugging Face Spaces
 
-The application can be deployed to any Python-compatible hosting platform:
+## 📝 License
 
-- **Heroku**: Use the included `requirements.txt`
-- **Railway**: Compatible with the current structure
-- **Render**: Works with Flask applications
-- **PythonAnywhere**: Standard Flask deployment
+MIT License - see LICENSE file for details.
 
-## API Endpoints
-
-- `GET /`: Main application interface
-- `POST /upload`: Upload menu image for processing
-- `GET /health`: Health check endpoint
-
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Add tests for new functionality
-5. Run the test suite
-6. Submit a pull request
+4. Add tests
+5. Submit a pull request
 
-## Alternatives
-[MenuGuide](https://menuguide.app/#download)
+## 📞 Support
 
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
+For issues and questions, please open an issue on GitHub.

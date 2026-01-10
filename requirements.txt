@@ -1,40 +1,18 @@
-# Gradio for Hugging Face Spaces
-gradio==5.9.1
+# Core dependencies
+gradio>=4.0.0
+pydantic>=2.0.0
+python-dotenv>=1.0.0
+pillow>=10.0.0
+requests>=2.31.0
+urllib3>=2.0.0
 
-# Core Flask dependencies (for standalone deployment)
-flask==3.1.2
-werkzeug==3.1.5
+# AI and API clients
+openai>=1.0.0
+httpx>=0.25.0
 
-# Security and CORS
-flask-cors==5.0.0
-flask-limiter==3.8.0
+# Image processing and search
+google-api-python-client>=2.0.0
 
-# Environment variables
-python-dotenv==1.0.1
-
-# Data validation and models
-pydantic==2.12.5
-
-# Image processing
-pillow==12.1.0
-
-# HTTP requests with security
-requests==2.32.5
-urllib3==2.2.3
-
-# AI/ML APIs
-openai==1.58.1
-
-# Testing dependencies (dev only - not needed for Spaces)
-# pytest==9.0.2
-# hypothesis==2.1.2
-
-# Additional Flask dependencies
-jinja2==3.1.6
-markupsafe==3.0.3
-itsdangerous==2.2.0
-click==8.3.1
-blinker==1.9.0
-
-# Redis for production rate limiting (optional)
-# redis==5.2.1
+# Utilities
+python-multipart>=0.0.6
+typing-extensions>=4.8.0

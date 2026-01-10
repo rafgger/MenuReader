@@ -19,8 +19,9 @@ from urllib3.util.retry import Retry
 from urllib3.exceptions import InsecureRequestWarning
 import urllib3
 
-# Disable insecure request warnings for development
-urllib3.disable_warnings(InsecureRequestWarning)
+# Disable insecure request warnings (only in development)
+if os.environ.get('ENVIRONMENT', 'production') == 'development':
+    urllib3.disable_warnings(InsecureRequestWarning)
 
 logger = logging.getLogger(__name__)
 
@@ -116,8 +117,8 @@ class SecureAPIClient:
             'Connection': 'keep-alive'
         })
         
-        # SSL verification (disable only for development if needed)
-        self.session.verify = os.environ.get('SSL_VERIFY', 'true').lower() != 'false'
+        # SSL verification (enabled by default for production)
+        self.session.verify = os.environ.get('SSL_VERIFY', 'true').lower() == 'true'
     
     def _load_credentials(self) -> None:
         """Load API credentials from environment variables."""
