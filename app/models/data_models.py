@@ -65,7 +65,7 @@ class Dish(BaseModel):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     name: str = Field(..., min_length=1, description="Name of the dish")
     original_name: str = Field(..., description="Original text from menu")
-    price: str = Field(default="", description="Price as extracted from menu")
+    price: Optional[str] = Field(default=None, description="Price as extracted from menu (can be None)")
     confidence: float = Field(default=0.0, ge=0.0, le=1.0, description="OCR confidence score")
     position: Dict[str, int] = Field(default_factory=dict, description="Location in original image")
 
@@ -111,7 +111,7 @@ class OCRResult(BaseModel):
 class ParsedDish(BaseModel):
     """Dish information parsed from OCR text."""
     name: str = Field(..., min_length=1, description="Parsed dish name")
-    price: str = Field(default="", description="Parsed price")
+    price: Optional[str] = Field(default=None, description="Parsed price (can be None if not visible)")
     description: Optional[str] = Field(None, description="Any description found in menu")
     confidence: float = Field(default=0.0, ge=0.0, le=1.0, description="Parsing confidence")
 
@@ -138,12 +138,14 @@ class RequestCache:
         self.ocr_results: Dict[str, OCRResult] = {}
         self.image_search_results: Dict[str, List[FoodImage]] = {}
         self.descriptions: Dict[str, DishDescription] = {}
+        self.ai_analysis_results: Dict[str, List[ParsedDish]] = {}
     
     def clear(self) -> None:
         """Clear all cached data."""
         self.ocr_results.clear()
         self.image_search_results.clear()
         self.descriptions.clear()
+        self.ai_analysis_results.clear()
     
     def get_ocr_result(self, image_hash: str) -> Optional[OCRResult]:
         """Get cached OCR result by image hash."""
@@ -168,3 +170,11 @@ class RequestCache:
     def set_description(self, dish_name: str, description: DishDescription) -> None:
         """Cache description by dish name."""
         self.descriptions[dish_name] = description
+    
+    def get_ai_analysis_result(self, image_hash: str) -> Optional[List[ParsedDish]]:
+        """Get cached AI analysis result by image hash."""
+        return self.ai_analysis_results.get(image_hash)
+    
+    def set_ai_analysis_result(self, image_hash: str, dishes: List[ParsedDish]) -> None:
+        """Cache AI analysis result by image hash."""
+        self.ai_analysis_results[image_hash] = dishes
