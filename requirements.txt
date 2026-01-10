@@ -1,4 +1,7 @@
-# Core Flask dependencies
+# Gradio for Hugging Face Spaces
+gradio==5.9.1
+
+# Core Flask dependencies (for standalone deployment)
 flask==3.1.2
 werkzeug==3.1.5
 
@@ -22,9 +25,9 @@ urllib3==2.2.3
 # AI/ML APIs
 openai==1.58.1
 
-# Testing dependencies (dev)
-pytest==9.0.2
-hypothesis==2.1.2
+# Testing dependencies (dev only - not needed for Spaces)
+# pytest==9.0.2
+# hypothesis==2.1.2
 
 # Additional Flask dependencies
 jinja2==3.1.6
@@ -34,4 +37,4 @@ click==8.3.1
 blinker==1.9.0
 
 # Redis for production rate limiting (optional)
-redis==5.2.1
+# redis==5.2.1
