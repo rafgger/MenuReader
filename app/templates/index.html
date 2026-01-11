@@ -315,7 +315,7 @@
                     </button>
                 </div>
                 <input type="file" id="fileInput" name="file" accept="image/*">
-                <input type="file" id="cameraInput" name="file" accept="image/*" capture="environment">
+                <input type="file" id="cameraInput" name="file" accept="image/*" capture="environment" style="display: none;">
                 <p style="margin-top: 15px; color: #666; font-size: 14px;">
                     Supported formats: JPEG, PNG, WebP (max 16MB)
                 </p>
@@ -608,47 +608,68 @@
         // Force rear camera
         function openRearCamera() {
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                navigator.mediaDevices.getUserMedia({
-                    video: { facingMode: 'environment' }
+                // Try to enumerate devices first to find rear camera
+                navigator.mediaDevices.enumerateDevices().then(devices => {
+                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                    const rearCamera = videoDevices.find(device => 
+                        device.label.toLowerCase().includes('back') || 
+                        device.label.toLowerCase().includes('rear') ||
+                        device.label.toLowerCase().includes('environment')
+                    );
+                    
+                    const constraints = rearCamera ? 
+                        { video: { deviceId: { exact: rearCamera.deviceId } } } :
+                        { video: { facingMode: { exact: 'environment' } } };
+                    
+                    return navigator.mediaDevices.getUserMedia(constraints);
                 }).then(stream => {
-                    const video = document.createElement('video');
-                    video.srcObject = stream;
-                    video.play();
-                    
-                    // Simple capture interface
-                    const modal = document.createElement('div');
-                    modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;';
-                    
-                    video.style.cssText = 'max-width:90%;max-height:70%;border-radius:10px;';
-                    
-                    const captureBtn = document.createElement('button');
-                    captureBtn.textContent = '📷 Capture';
-                    captureBtn.style.cssText = 'background:#28a745;color:white;border:none;padding:15px 30px;border-radius:25px;font-size:16px;margin:20px;cursor:pointer;';
-                    
-                    captureBtn.onclick = () => {
-                        const canvas = document.createElement('canvas');
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
-                        canvas.getContext('2d').drawImage(video, 0, 0);
-                        
-                        canvas.toBlob(blob => {
-                            const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
-                            handleFileUpload(file);
-                            stream.getTracks().forEach(track => track.stop());
-                            document.body.removeChild(modal);
-                        }, 'image/jpeg', 0.9);
-                    };
-                    
-                    modal.appendChild(video);
-                    modal.appendChild(captureBtn);
-                    document.body.appendChild(modal);
+                    createCameraInterface(stream);
                 }).catch(() => {
-                    // Fallback to file input
-                    document.getElementById('cameraInput').click();
+                    // Fallback to regular environment
+                    navigator.mediaDevices.getUserMedia({
+                        video: { facingMode: 'environment' }
+                    }).then(stream => {
+                        createCameraInterface(stream);
+                    }).catch(() => {
+                        document.getElementById('cameraInput').click();
+                    });
                 });
             } else {
                 document.getElementById('cameraInput').click();
             }
+        }
+
+        function createCameraInterface(stream) {
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.play();
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+            
+            video.style.cssText = 'max-width:90%;max-height:70%;border-radius:10px;';
+            
+            const captureBtn = document.createElement('button');
+            captureBtn.textContent = '📷 Capture';
+            captureBtn.style.cssText = 'background:#28a745;color:white;border:none;padding:15px 30px;border-radius:25px;font-size:16px;margin:20px;cursor:pointer;';
+            
+            captureBtn.onclick = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                
+                canvas.toBlob(blob => {
+                    const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
+                    handleFileUpload(file);
+                    stream.getTracks().forEach(track => track.stop());
+                    document.body.removeChild(modal);
+                }, 'image/jpeg', 0.9);
+            };
+            
+            modal.appendChild(video);
+            modal.appendChild(captureBtn);
+            document.body.appendChild(modal);
         }
 
         // Detect if user is on mobile device
