@@ -315,7 +315,7 @@
                     </button>
                 </div>
                 <input type="file" id="fileInput" name="file" accept="image/*">
-                <input type="file" id="cameraInput" name="file" accept="image/*" capture="environment" style="display: none;">
+                <input type="file" id="cameraInput" name="file" accept="image/*" capture style="display: none;">
                 <p style="margin-top: 15px; color: #666; font-size: 14px;">
                     Supported formats: JPEG, PNG, WebP (max 16MB)
                 </p>
@@ -607,34 +607,26 @@
 
         // Force rear camera
         function openRearCamera() {
+            // Always try getUserMedia first on mobile
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                // Try to enumerate devices first to find rear camera
-                navigator.mediaDevices.enumerateDevices().then(devices => {
-                    const videoDevices = devices.filter(device => device.kind === 'videoinput');
-                    const rearCamera = videoDevices.find(device => 
-                        device.label.toLowerCase().includes('back') || 
-                        device.label.toLowerCase().includes('rear') ||
-                        device.label.toLowerCase().includes('environment')
-                    );
-                    
-                    const constraints = rearCamera ? 
-                        { video: { deviceId: { exact: rearCamera.deviceId } } } :
-                        { video: { facingMode: { exact: 'environment' } } };
-                    
-                    return navigator.mediaDevices.getUserMedia(constraints);
+                console.log('Attempting rear camera access...');
+                
+                navigator.mediaDevices.getUserMedia({
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
                 }).then(stream => {
+                    console.log('Rear camera accessed successfully');
                     createCameraInterface(stream);
-                }).catch(() => {
-                    // Fallback to regular environment
-                    navigator.mediaDevices.getUserMedia({
-                        video: { facingMode: 'environment' }
-                    }).then(stream => {
-                        createCameraInterface(stream);
-                    }).catch(() => {
-                        document.getElementById('cameraInput').click();
-                    });
+                }).catch(error => {
+                    console.log('Rear camera failed, trying file input:', error);
+                    // Only use file input as last resort
+                    document.getElementById('cameraInput').click();
                 });
             } else {
+                console.log('getUserMedia not supported, using file input');
                 document.getElementById('cameraInput').click();
             }
         }
