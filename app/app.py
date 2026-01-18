@@ -608,6 +608,64 @@ def register_routes(app: Flask, api_client: SecureAPIClient) -> None:
                                      'recoverable': False
                                  }])
     
+    @app.route('/sample-menu', methods=['POST'])
+    @app.limiter.limit("5 per minute") if hasattr(app, 'limiter') else lambda f: f
+    def process_sample_menu():
+        """Process a sample menu image for testing purposes."""
+        try:
+            # Look for user's menu image
+            sample_image_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'examples', 'images', '1.png')
+            
+            if not os.path.exists(sample_image_path):
+                # Create a simple sample menu if it doesn't exist
+                create_sample_menu_image(sample_image_path)
+            
+            with open(sample_image_path, 'rb') as f:
+                image_data = f.read()
+            
+            # Generate processing ID
+            processing_id = str(uuid.uuid4())[:16]
+            
+            app.logger.info(f"Sample menu processing started: {processing_id}, using: {os.path.basename(sample_image_path)}")
+            
+            # Define progress callback
+            def progress_callback(state: ProcessingState):
+                app.logger.info(f"Sample processing {processing_id}: {state.current_step.value} - {state.progress}%")
+            
+            # Process the sample menu
+            try:
+                result = menu_processor.process_menu(
+                    image_data=image_data,
+                    processing_id=processing_id,
+                    progress_callback=progress_callback
+                )
+                
+                # Store results
+                processing_results[processing_id] = result
+                
+                return jsonify({
+                    'processing_id': processing_id,
+                    'message': f'Sample menu processing started (using {os.path.basename(sample_image_path)})',
+                    'status': 'processing',
+                    'sample': True
+                })
+                
+            except Exception as processing_error:
+                app.logger.error(f'Sample processing failed for {processing_id}: {processing_error}', exc_info=True)
+                return jsonify({
+                    'error': 'Sample processing failed',
+                    'message': f'Sample menu analysis failed: {str(processing_error)}',
+                    'error_code': 'SAMPLE_PROCESSING_FAILED'
+                }), 500
+            
+        except Exception as e:
+            app.logger.error(f'Sample menu error: {e}', exc_info=True)
+            return jsonify({
+                'error': 'Sample menu failed',
+                'message': 'Could not process sample menu',
+                'error_code': 'SAMPLE_MENU_FAILED'
+            }), 500
+
     @app.route('/cancel/<processing_id>', methods=['POST'])
     def cancel_processing(processing_id: str):
         """Cancel an ongoing processing operation."""
@@ -639,6 +697,100 @@ def register_routes(app: Flask, api_client: SecureAPIClient) -> None:
                 'error': 'Cancellation failed',
                 'message': 'Could not cancel processing'
             }), 500
+
+
+def create_sample_menu_image(output_path: str) -> None:
+    """
+    Create a simple sample menu image for testing.
+    
+    Args:
+        output_path: Path where to save the sample menu image
+    """
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        import textwrap
+        
+        # Create a sample menu image
+        width, height = 800, 1000
+        background_color = (255, 255, 255)  # White
+        text_color = (0, 0, 0)  # Black
+        
+        # Create image
+        image = Image.new('RGB', (width, height), background_color)
+        draw = ImageDraw.Draw(image)
+        
+        # Try to use a default font, fallback to basic if not available
+        try:
+            title_font = ImageFont.truetype("arial.ttf", 36)
+            header_font = ImageFont.truetype("arial.ttf", 24)
+            item_font = ImageFont.truetype("arial.ttf", 18)
+            price_font = ImageFont.truetype("arial.ttf", 16)
+        except:
+            title_font = ImageFont.load_default()
+            header_font = ImageFont.load_default()
+            item_font = ImageFont.load_default()
+            price_font = ImageFont.load_default()
+        
+        # Draw restaurant name
+        draw.text((width//2, 50), "SAMPLE RESTAURANT", font=title_font, fill=text_color, anchor="mt")
+        draw.text((width//2, 90), "Sample Menu for Testing", font=header_font, fill=(100, 100, 100), anchor="mt")
+        
+        # Sample menu items
+        menu_items = [
+            ("APPETIZERS", [
+                ("Caesar Salad", "$12.99", "Fresh romaine lettuce with parmesan cheese"),
+                ("Chicken Wings", "$14.99", "Buffalo style with blue cheese dip"),
+                ("Mozzarella Sticks", "$9.99", "Served with marinara sauce")
+            ]),
+            ("MAIN COURSES", [
+                ("Grilled Salmon", "$24.99", "Atlantic salmon with lemon butter sauce"),
+                ("Beef Burger", "$16.99", "Angus beef with lettuce, tomato, and fries"),
+                ("Chicken Parmesan", "$19.99", "Breaded chicken breast with pasta"),
+                ("Vegetable Stir Fry", "$15.99", "Fresh vegetables with tofu and rice")
+            ]),
+            ("DESSERTS", [
+                ("Chocolate Cake", "$7.99", "Rich chocolate layer cake"),
+                ("Ice Cream Sundae", "$5.99", "Vanilla ice cream with toppings")
+            ])
+        ]
+        
+        y_position = 150
+        
+        for category, items in menu_items:
+            # Draw category header
+            draw.text((50, y_position), category, font=header_font, fill=text_color)
+            y_position += 40
+            
+            # Draw line under category
+            draw.line([(50, y_position), (width-50, y_position)], fill=(200, 200, 200), width=2)
+            y_position += 20
+            
+            # Draw menu items
+            for item_name, price, description in items:
+                # Item name and price on same line
+                draw.text((50, y_position), item_name, font=item_font, fill=text_color)
+                draw.text((width-50, y_position), price, font=price_font, fill=text_color, anchor="rt")
+                y_position += 25
+                
+                # Description
+                wrapped_desc = textwrap.fill(description, width=80)
+                for line in wrapped_desc.split('\n'):
+                    draw.text((70, y_position), line, font=price_font, fill=(100, 100, 100))
+                    y_position += 20
+                
+                y_position += 10  # Space between items
+            
+            y_position += 20  # Space between categories
+        
+        # Save the image as PNG
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        image.save(output_path, 'PNG')
+        
+    except Exception as e:
+        # If PIL is not available, create a simple text file as placeholder
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
+        with open(output_path.replace('.png', '.txt'), 'w') as f:
+            f.write("Sample menu placeholder - PIL not available for image generation")
 
 
 def allowed_file(filename: str, allowed_extensions: set) -> bool:
