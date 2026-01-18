@@ -31,7 +31,8 @@ ENV/
 env/
 
 # IDE
-.vscode/
+.vscode/settings.json
+.vscode/extensions.json
 .idea/
 *.swp
 *.swo
@@ -58,7 +59,7 @@ tmp/
 
 # API credentials
 google-vision-service-account.json
-*.json
+*service-account*.json
 
 # Cache
 .hypothesis/

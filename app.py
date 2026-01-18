@@ -28,7 +28,7 @@ api_client = SecureAPIClient()
 shared_cache = RequestCache()
 menu_processor = AIMenuProcessor(api_client=api_client, cache=shared_cache)
 
-def process_menu_image(image: Image.Image) -> Tuple[str, str]:
+def process_menu_image(image: Image.Image) -> str:
     """
     Process uploaded menu image and return formatted results.
     
@@ -63,19 +63,18 @@ def process_menu_image(image: Image.Image) -> Tuple[str, str]:
         
         if not result.success:
             error_messages = [error.message for error in result.errors]
-            return f"❌ **Processing Failed**: {'; '.join(error_messages)}", "{}"
+            return f"❌ **Processing Failed**: {'; '.join(error_messages)}"
         
         # Format results for display
         html_output = format_results_html(result.dishes, result.errors)
-        json_output = format_results_json(result.dishes, result.errors, result.processing_time)
         
         logger.info(f"Processing completed: {processing_id}, found {len(result.dishes)} dishes")
         
-        return html_output, json_output
+        return html_output
         
     except Exception as e:
         logger.error(f"Error processing menu image: {e}", exc_info=True)
-        return f"❌ **Error**: {str(e)}", "{}"
+        return f"❌ **Error**: {str(e)}"
 
 
 def format_results_html(dishes: List[EnrichedDish], errors: List[ProcessingError]) -> str:
@@ -323,7 +322,7 @@ def create_gradio_interface():
         gr.Markdown("""
         # 🍽️ AI Menu Analyzer
         
-        Transform menu photos into rich, visual dining guides using AI vision models! Upload a photo of a restaurant menu 
+        Transform menu photos into rich, visual dining guides using AI vision models in about 20 s! Upload a photo of a restaurant menu 
         and get detailed information about each dish including images and AI-generated descriptions.
         
         """)

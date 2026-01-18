@@ -150,7 +150,7 @@ class ImageSearchService:
         self._enforce_rate_limit()
         
         # Prepare search query with food-specific terms
-        search_query = f"{dish_name} food dish recipe"
+        search_query = f"{dish_name} dish"
         
         # API parameters
         params = {
@@ -187,6 +187,12 @@ class ImageSearchService:
         # Extract image items
         items = data.get('items', [])
         logger.debug(f"Retrieved {len(items)} raw image results for '{dish_name}'")
+        
+        # Log each returned image URL for debugging
+        for i, item in enumerate(items, 1):
+            image_url = item.get('link', 'N/A')
+            title = item.get('title', 'N/A')
+            logger.info(f"Google returned image {i}: {title} - {image_url}")
         
         return items
     
@@ -238,6 +244,11 @@ class ImageSearchService:
         
         # Sort by quality score (larger images first, then by source reliability)
         validated_images.sort(key=self._calculate_quality_score, reverse=True)
+        
+        # Log final filtered results
+        logger.info(f"Filtered to {len(validated_images)} quality images:")
+        for i, img in enumerate(validated_images, 1):
+            logger.info(f"  {i}. {img.title} - {img.url} (Score: {self._calculate_quality_score(img):.3f})")
         
         logger.debug(f"Filtered to {len(validated_images)} quality images")
         return validated_images
