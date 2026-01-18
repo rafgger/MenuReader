@@ -2,6 +2,8 @@ Always create and run a minimal automated test (happy path plus 1 small edge cas
 
 Try to write as little code as possible.
 
+Do exlain as well, how everything works.
+
 Engineering principles to follow (SOLID, KISS, DRY)
 
 - SOLID

@@ -1,6 +1,6 @@
 # 🍽️ AI Menu Analyzer
 
-Transform menu photos into rich, visual dining guides using AI vision models! Upload a photo of a restaurant menu and get detailed information about each dish including images and AI-generated descriptions.
+Transform menu photos into rich, visual dining guides using AI vision models in about 20s! Upload a photo of a restaurant menu and get detailed information about each dish including images and AI-generated descriptions.
 
 ## ✨ Features
 
