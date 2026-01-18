@@ -28,6 +28,84 @@ api_client = SecureAPIClient()
 shared_cache = RequestCache()
 menu_processor = AIMenuProcessor(api_client=api_client, cache=shared_cache)
 
+def process_sample_menu() -> str:
+    """
+    Process a sample menu for testing purposes.
+    
+    Returns:
+        Formatted HTML results from sample menu processing
+    """
+    try:
+        # Look for user's menu image
+        sample_path = os.path.join('examples', 'images', '1.png')
+        
+        image_data = None
+        used_path = None
+        
+        # Try to load existing image
+        if os.path.exists(sample_path):
+            with open(sample_path, 'rb') as f:
+                image_data = f.read()
+            used_path = sample_path
+        
+        # If no image found, create a simple one
+        if not image_data:
+            from PIL import Image, ImageDraw, ImageFont
+            import io
+            
+            # Create sample menu image
+            width, height = 800, 1000
+            image = Image.new('RGB', (width, height), (255, 255, 255))
+            draw = ImageDraw.Draw(image)
+            
+            # Use default font
+            try:
+                font = ImageFont.load_default()
+            except:
+                font = None
+            
+            # Draw sample menu content
+            draw.text((50, 50), "SAMPLE RESTAURANT", fill=(0, 0, 0), font=font)
+            draw.text((50, 100), "Caesar Salad - $12.99", fill=(0, 0, 0), font=font)
+            draw.text((50, 130), "Grilled Salmon - $24.99", fill=(0, 0, 0), font=font)
+            draw.text((50, 160), "Beef Burger - $16.99", fill=(0, 0, 0), font=font)
+            draw.text((50, 190), "Chocolate Cake - $7.99", fill=(0, 0, 0), font=font)
+            
+            # Convert to bytes
+            img_buffer = io.BytesIO()
+            image.save(img_buffer, format='JPEG', quality=95)
+            image_data = img_buffer.getvalue()
+            img_buffer.close()
+            used_path = "generated sample"
+        
+        # Generate processing ID
+        import uuid
+        processing_id = str(uuid.uuid4())[:16]
+        
+        logger.info(f"Processing sample menu: {processing_id}, using: {used_path}")
+        
+        # Process the sample menu
+        result = menu_processor.process_menu(
+            image_data=image_data,
+            processing_id=processing_id
+        )
+        
+        if not result.success:
+            error_messages = [error.message for error in result.errors]
+            return f"❌ **Sample Processing Failed**: {'; '.join(error_messages)}"
+        
+        # Format results for display
+        html_output = format_results_html(result.dishes, result.errors)
+        
+        logger.info(f"Sample processing completed: {processing_id}, found {len(result.dishes)} dishes")
+        
+        return html_output
+        
+    except Exception as e:
+        logger.error(f"Error processing sample menu: {e}", exc_info=True)
+        return f"❌ **Sample Menu Error**: {str(e)}"
+
+
 def process_menu_image(image: Image.Image) -> str:
     """
     Process uploaded menu image and return formatted results.
@@ -310,6 +388,12 @@ def create_gradio_interface():
         font-family: monospace;
         font-size: 12px;
     }
+    .sample-btn-tiny {
+        max-width: 80px !important;
+        min-width: 80px !important;
+        padding: 4px 8px !important;
+        font-size: 12px !important;
+    }
     """
     
     with gr.Blocks(
@@ -323,14 +407,24 @@ def create_gradio_interface():
         # 🍽️ AI Menu Analyzer
         
         Transform menu photos into rich, visual dining guides using AI vision models in about 20 s! Upload a photo of a restaurant menu 
-        and get detailed information about each dish including images and AI-generated descriptions.
+        and get detailed information about each dish including images and AI-generated descriptions. Video instructions [here](https://www.youtube.com/watch?v=N-Atq0eP7lU).
         
         """)
         
         with gr.Row():
             with gr.Column(scale=1):
-                # Input section
-                gr.Markdown("### 📤 Upload Menu Image")
+                # Input section with sample button in header
+                with gr.Row():
+                    gr.Markdown("### 📤 Upload Menu Image")
+                    sample_btn = gr.Button(
+                        "🍽️ Sample",
+                        variant="secondary",
+                        size="sm",
+                        scale=0,
+                        min_width=80,
+                        elem_classes=["sample-btn-tiny"]
+                    )
+                
                 image_input = gr.Image(
                     label="Menu Photo",
                     type="pil",
@@ -355,10 +449,17 @@ def create_gradio_interface():
                             elem_classes=["output-html"]
                         )
         
-        # Processing event
+        # Processing events
         process_btn.click(
             fn=process_menu_image,
             inputs=[image_input],
+            outputs=[results_output],
+            show_progress=True
+        )
+        
+        sample_btn.click(
+            fn=process_sample_menu,
+            inputs=[],
             outputs=[results_output],
             show_progress=True
         )
