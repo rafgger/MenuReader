@@ -1,5 +1,7 @@
 """
 Tests for the data models module.
+Run: pytest tests/test_data_models.py
+
 """
 
 import pytest
