@@ -310,12 +310,12 @@
                     <button type="button" class="upload-btn" onclick="document.getElementById('fileInput').click()">
                         📁 Choose File
                     </button>
-                    <button type="button" class="camera-btn" onclick="document.getElementById('cameraInput').click()">
+                    <button type="button" class="camera-btn" onclick="openRearCamera()">
                         📷 Take Photo
                     </button>
                 </div>
                 <input type="file" id="fileInput" name="file" accept="image/*">
-                <input type="file" id="cameraInput" name="file" accept="image/*" capture="environment">
+                <input type="file" id="cameraInput" name="file" accept="image/*" capture style="display: none;">
                 <p style="margin-top: 15px; color: #666; font-size: 14px;">
                     Supported formats: JPEG, PNG, WebP (max 16MB)
                 </p>
@@ -603,6 +603,65 @@
                 clearInterval(pollInterval);
                 showMessage('Processing is taking longer than expected. Please try again.', 'error');
             }, 300000);
+        }
+
+        // Force rear camera
+        function openRearCamera() {
+            // Always try getUserMedia first on mobile
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                console.log('Attempting rear camera access...');
+                
+                navigator.mediaDevices.getUserMedia({
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                }).then(stream => {
+                    console.log('Rear camera accessed successfully');
+                    createCameraInterface(stream);
+                }).catch(error => {
+                    console.log('Rear camera failed, trying file input:', error);
+                    // Only use file input as last resort
+                    document.getElementById('cameraInput').click();
+                });
+            } else {
+                console.log('getUserMedia not supported, using file input');
+                document.getElementById('cameraInput').click();
+            }
+        }
+
+        function createCameraInterface(stream) {
+            const video = document.createElement('video');
+            video.srcObject = stream;
+            video.play();
+            
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;';
+            
+            video.style.cssText = 'max-width:90%;max-height:70%;border-radius:10px;';
+            
+            const captureBtn = document.createElement('button');
+            captureBtn.textContent = '📷 Capture';
+            captureBtn.style.cssText = 'background:#28a745;color:white;border:none;padding:15px 30px;border-radius:25px;font-size:16px;margin:20px;cursor:pointer;';
+            
+            captureBtn.onclick = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                
+                canvas.toBlob(blob => {
+                    const file = new File([blob], `camera-${Date.now()}.jpg`, { type: 'image/jpeg' });
+                    handleFileUpload(file);
+                    stream.getTracks().forEach(track => track.stop());
+                    document.body.removeChild(modal);
+                }, 'image/jpeg', 0.9);
+            };
+            
+            modal.appendChild(video);
+            modal.appendChild(captureBtn);
+            document.body.appendChild(modal);
         }
 
         // Detect if user is on mobile device

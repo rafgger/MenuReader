@@ -326,9 +326,6 @@ def create_gradio_interface():
         Transform menu photos into rich, visual dining guides using AI vision models! Upload a photo of a restaurant menu 
         and get detailed information about each dish including images and AI-generated descriptions.
         
-        **Powered by:** AI Vision Models (GPT-4o, Gemini Pro Vision)  
-        **Supported formats:** JPEG, PNG, WebP  
-        **Languages:** Multi-language menu support
         """)
         
         with gr.Row():
@@ -346,20 +343,6 @@ def create_gradio_interface():
                     variant="primary",
                     size="lg"
                 )
-                
-                # API Status
-                gr.Markdown("### 📊 System Status")
-                status_output = gr.Markdown(
-                    value=get_api_status(),
-                    label="API Status"
-                )
-                
-                # Refresh status button
-                refresh_btn = gr.Button("🔄 Refresh Status", size="sm")
-                refresh_btn.click(
-                    fn=get_api_status,
-                    outputs=status_output
-                )
             
             with gr.Column(scale=2):
                 # Output section
@@ -372,20 +355,12 @@ def create_gradio_interface():
                             value="<p>Upload a menu image to see detailed dish information here.</p>",
                             elem_classes=["output-html"]
                         )
-                    
-                    with gr.TabItem("🔧 JSON Data"):
-                        json_output = gr.Code(
-                            label="Raw JSON Results",
-                            language="json",
-                            value="{}",
-                            elem_classes=["json-output"]
-                        )
         
         # Processing event
         process_btn.click(
             fn=process_menu_image,
             inputs=[image_input],
-            outputs=[results_output, json_output],
+            outputs=[results_output],
             show_progress=True
         )
         
@@ -397,10 +372,6 @@ def create_gradio_interface():
         - Ensure text is readable and not blurry
         - Try to capture the entire menu section you're interested in
         - Works with menus in multiple languages
-        
-        ### 🔧 Technical Details
-        This application uses AI vision models for direct dish extraction, Google Custom Search for food images, 
-        and OpenAI for generating detailed dish descriptions. No traditional OCR preprocessing required.
         """)
     
     return interface
