@@ -9,7 +9,11 @@ dependencies = [
     "flask-cors>=6.0.2",
     "flask-limiter>=4.1.1",
     "google-cloud-vision>=3.11.0",
+<<<<<<< HEAD
     "gradio>=4.0.0",
+=======
+    "gradio>=6.3.0",
+>>>>>>> production
     "openai==1.58.1",
     "pillow>=12.1.0",
     "pydantic>=2.12.5",
