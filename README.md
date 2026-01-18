@@ -1,6 +1,6 @@
 # 🍽️ AI Menu Analyzer
 
-Transform menu photos into rich, visual dining guides using AI vision models in about 20s! Upload a photo of a restaurant menu and get detailed information about each dish including images and AI-generated descriptions.
+Transform menu photos into rich, visual dining guides using AI vision models in about 20s! Upload a photo of a restaurant menu and get detailed information about each dish including images and AI-generated descriptions. Try out @ https://huggingface.co/spaces/rafgger/MenuReader
 
 <a href="https://www.youtube.com/watch?v=N-Atq0eP7lU" target="_blank">
   <img src="https://github.com/user-attachments/assets/ba95792c-5a6d-4a56-83cc-2794b5f5218f" alt="Menu Reader video" width="500"/>
