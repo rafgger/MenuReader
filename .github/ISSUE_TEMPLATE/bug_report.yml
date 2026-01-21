@@ -1,0 +1,95 @@
+name: 🐛 Bug Report
+description: Report a bug or issue with MenuReader
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug! Please fill out the information below to help us fix it faster.
+  
+  - type: input
+    id: title
+    attributes:
+      label: Bug Summary
+      description: A quick summary of the issue (e.g., "Checkout button greyed out")
+      placeholder: e.g., "Menu extraction fails on PDF files"
+    validations:
+      required: true
+  
+  - type: dropdown
+    id: access-method
+    attributes:
+      label: How are you using MenuReader?
+      description: This helps us understand your environment
+      options:
+        - Hugging Face Space (web interface)
+        - Local installation
+        - API/Integration
+        - Other (please specify in description)
+    validations:
+      required: true
+  
+  - type: textarea
+    id: steps-to-reproduce
+    attributes:
+      label: Steps to Reproduce
+      description: Clear steps to reproduce the issue
+      placeholder: |
+        1. Open the app
+        2. Upload a menu image
+        3. Click "Extract" button
+        4. Error appears
+    validations:
+      required: true
+  
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior
+      description: What should have happened?
+      placeholder: The app should extract menu items and display them in a structured format.
+    validations:
+      required: true
+  
+  - type: textarea
+    id: actual-behavior
+    attributes:
+      label: Actual Behavior
+      description: What actually happened?
+      placeholder: The app showed an error message and failed to process the image.
+    validations:
+      required: true
+  
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment Details
+      description: Device, OS, Browser, App Version, etc.
+      placeholder: |
+        - Device: iPhone 15 / MacBook Pro / Windows PC
+        - OS: iOS 17 / macOS 14 / Windows 11
+        - Browser: Chrome 120 / Safari 17 / Firefox 121
+        - App Version: v1.2 (if applicable)
+    validations:
+      required: false
+  
+  - type: textarea
+    id: visuals
+    attributes:
+      label: Screenshots or Screen Recordings
+      description: |
+        Visuals are worth a thousand words! Drag and drop images or videos here.
+        Tip: You can paste images directly from your clipboard.
+      placeholder: Attach screenshots, screen recordings, or error messages here
+    validations:
+      required: false
+  
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other information that might help us understand the issue
+      placeholder: This started happening after the last update...
+    validations:
+      required: false
