@@ -397,10 +397,7 @@ def create_gradio_interface():
         - Ensure text is readable and not blurry
         - Try to capture the entire menu section you're interested in
         - Works with menus in multiple languages
-        
-        ### 🔧 Technical Details
-        This application uses AI vision models for direct dish extraction, Google Custom Search for food images, 
-        and OpenAI for generating detailed dish descriptions. No traditional OCR preprocessing required.
+    
         [Report an issue](https://github.com/rafgger/MenuReader/issues/)
         """)
     
