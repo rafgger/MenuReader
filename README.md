@@ -1,3 +1,15 @@
+---
+title: AI Menu Analyzer
+emoji: 🍽️
+colorFrom: blue
+colorTo: green
+sdk: gradio
+sdk_version: "6.3.0"
+python_version: "3.11"
+app_file: app.py
+pinned: false
+---
+
 # 🍽️ AI Menu Analyzer
 
 Transform menu photos into rich, visual dining guides using AI vision models! Upload a photo of a restaurant menu and get detailed information about each dish including images and AI-generated descriptions.
