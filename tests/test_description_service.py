@@ -19,7 +19,7 @@ class TestDescriptionService:
         """Test service initialization with API key."""
         service = DescriptionService(api_key="test-key")
         assert service.api_key == "test-key"
-        assert service.model == "gpt-3.5-turbo"
+        assert service.model == "gpt-4o-mini"
     
     def test_init_without_api_key(self):
         """Test service initialization without API key."""
@@ -47,7 +47,7 @@ class TestDescriptionService:
         info = service.get_service_info()
         
         assert info['service_name'] == 'OpenAI Description Service'
-        assert info['model'] == 'gpt-3.5-turbo'
+        assert info['model'] == 'gpt-4o-mini'
         assert 'available' in info
         assert 'api_key_configured' in info
     
