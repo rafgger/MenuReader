@@ -23,12 +23,12 @@ from app.services.secure_api_client import SecureAPIClient
 from app.models.data_models import EnrichedDish, ProcessingError, ProcessingState, RequestCache
 
 
-def create_app(config_name: Optional[str] = None) -> Flask:
+def create_app(config_name: str | dict | None = None) -> Flask:
     """
     Create and configure the Flask application with security enhancements.
     
     Args:
-        config_name: Configuration name ('development', 'production', 'testing')
+        config_name: Configuration name or dictionary of configuration overrides.
         
     Returns:
         Configured Flask application instance
@@ -36,7 +36,11 @@ def create_app(config_name: Optional[str] = None) -> Flask:
     app = Flask(__name__, template_folder='templates')
     
     # Load configuration
-    config = get_config(config_name)
+    overrides = config_name if isinstance(config_name, dict) else {}
+    base_name = ('testing' if overrides.get('TESTING') else None) if isinstance(config_name, dict) else config_name
+    config = get_config(base_name)
+    for key, value in overrides.items():
+        setattr(config, key, value)
     app.config.from_object(config)
     
     # Configure logging

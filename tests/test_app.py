@@ -45,7 +45,7 @@ class TestFlaskApp:
     
     def test_upload_no_file(self, client):
         """Test upload endpoint with no file."""
-        response = client.post('/upload')
+        response = client.post('/upload', content_type='multipart/form-data')
         assert response.status_code == 400
         
         data = response.get_json()
@@ -99,7 +99,7 @@ class TestFlaskApp:
     
     def test_results_api_route(self, client):
         """Test results API route with processing ID."""
-        response = client.get('/results/test-processing-id')
+        response = client.get('/results/12345678-1234-12')
         assert response.status_code == 404  # No results stored for this ID
         
         data = response.get_json()

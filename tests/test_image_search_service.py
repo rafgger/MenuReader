@@ -153,8 +153,6 @@ class TestImageSearchService:
         test_cases = [
             ("", 400, 300, "Pizza"),  # Empty URL
             ("http://example.com/logo.jpg", 400, 300, "Pizza Logo"),  # Logo in title
-            ("http://example.com/pizza.jpg", 100, 100, "Pizza"),  # Too small
-            ("http://example.com/pizza.gif", 400, 300, "Pizza"),  # Wrong format
             ("ftp://example.com/pizza.jpg", 400, 300, "Pizza"),  # Wrong protocol
         ]
         
@@ -164,6 +162,15 @@ class TestImageSearchService:
         # Test case that should pass
         assert self.service._passes_quality_filter(
             "https://example.com/pizza.jpg", 400, 300, "Delicious Pizza Recipe"
+        )
+
+    def test_quality_filter_accepts_small_images_and_gifs(self):
+        """Keep usable food results; dimensions affect ranking, not eligibility."""
+        assert self.service._passes_quality_filter(
+            "https://example.com/pizza.jpg", 100, 100, "Pizza"
+        )
+        assert self.service._passes_quality_filter(
+            "https://example.com/pizza.gif", 400, 300, "Pizza"
         )
     
     def test_quality_score_calculation(self):
