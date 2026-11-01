@@ -8,6 +8,7 @@ dish names and prices from menu images, replacing traditional OCR + parsing appr
 import os
 import base64
 import hashlib
+import json
 import time
 import logging
 from typing import List, Optional, Dict, Any
@@ -144,7 +145,6 @@ class AIMenuAnalyzer:
             content = result_data['choices'][0]['message']['content']
             
             # Parse JSON response
-            import json
             analysis_result = json.loads(content)
             
             # Convert to ParsedDish objects

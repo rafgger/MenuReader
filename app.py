@@ -13,6 +13,7 @@ import inspect
 from typing import List, Tuple, Optional
 from PIL import Image, ImageOps
 import json
+from html import escape
 
 # Import the core application components
 from app.services.ai_menu_processor import AIMenuProcessor
@@ -41,7 +42,7 @@ def process_menu_image(image: Image.Image) -> Tuple[str, str]:
     """
     try:
         if image is None:
-            return "❌ **Error**: Please upload an image first.", "{}"
+            return "<p>Please upload an image or take a camera snapshot before pressing Analyze Menu.</p>", "{}"
         
         # Convert PIL image to bytes using BytesIO (Windows-safe)
         import io
@@ -65,7 +66,11 @@ def process_menu_image(image: Image.Image) -> Tuple[str, str]:
         
         if not result.success:
             error_messages = [error.message for error in result.errors]
-            return f"❌ **Processing Failed**: {'; '.join(error_messages)}", "{}"
+            logger.error("Menu processing failed (%s): %s", processing_id, "; ".join(error_messages))
+            return (
+                f"<p><strong>Processing failed:</strong> {escape('; '.join(error_messages))}</p>",
+                format_results_json(result.dishes, result.errors, result.processing_time),
+            )
         
         # Format results for display
         html_output = format_results_html(result.dishes, result.errors)
@@ -347,6 +352,7 @@ def create_gradio_interface():
                     label="Menu Photo",
                     type="pil",
                     height=400,
+                    sources=["webcam", "upload"],
                     **camera_options
                 )
                 

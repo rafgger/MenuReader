@@ -399,10 +399,15 @@ class AIMenuProcessor:
         with self.state_lock:
             state = self.processing_states.get(processing_id)
             processing_time = time.time() - state.start_time if state else 0.0
+            # Preserve the underlying API error as well as the terminal failure.
+            all_errors = list(state.errors) if state else []
+            for error in errors:
+                if error not in all_errors:
+                    all_errors.append(error)
         
         return MenuAnalysisResult(
             dishes=[],
             processing_time=processing_time,
-            errors=errors,
+            errors=all_errors,
             success=False
         )
