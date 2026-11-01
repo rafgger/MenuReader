@@ -9,8 +9,9 @@ import gradio as gr
 import os
 import logging
 import tempfile
+import inspect
 from typing import List, Tuple, Optional
-from PIL import Image
+from PIL import Image, ImageOps
 import json
 
 # Import the core application components
@@ -45,6 +46,7 @@ def process_menu_image(image: Image.Image) -> Tuple[str, str]:
         # Convert PIL image to bytes using BytesIO (Windows-safe)
         import io
         img_buffer = io.BytesIO()
+        image = ImageOps.exif_transpose(image).convert("RGB")
         image.save(img_buffer, format='JPEG', quality=95)
         image_data = img_buffer.getvalue()
         img_buffer.close()
@@ -335,10 +337,17 @@ def create_gradio_interface():
             with gr.Column(scale=1):
                 # Input section
                 gr.Markdown("### 📤 Upload Menu Image")
+                # Gradio 6 moved mirror_webcam into WebcamOptions.
+                camera_options = (
+                    {"webcam_options": gr.WebcamOptions(mirror=False)}
+                    if "webcam_options" in inspect.signature(gr.Image).parameters
+                    else {"mirror_webcam": False}
+                )
                 image_input = gr.Image(
                     label="Menu Photo",
                     type="pil",
-                    height=400
+                    height=400,
+                    **camera_options
                 )
                 
                 process_btn = gr.Button(
@@ -409,10 +418,11 @@ demo = create_gradio_interface()
 
 # Launch configuration for Hugging Face Spaces
 if __name__ == "__main__":
-    # Check if running on Hugging Face Spaces
-    is_spaces = os.getenv("SPACE_ID") is not None
+    # An explicit phone-testing request takes precedence over SPACE_ID from .env.
+    share_enabled = os.getenv("GRADIO_SHARE", "false").strip().lower() == "true"
+    is_spaces = bool(os.getenv("SPACE_ID", "").strip())
     
-    if is_spaces:
+    if is_spaces and not share_enabled:
         logger.info("Running on Hugging Face Spaces")
         demo.launch(
             server_name="0.0.0.0",
@@ -426,7 +436,7 @@ if __name__ == "__main__":
         # Use environment variable to control debug mode (default: False for production)
         debug_mode = os.getenv("DEBUG", "false").lower() == "true"
         demo.launch(
-            share=False,
+            share=share_enabled,
             show_error=True,
             debug=debug_mode
         )

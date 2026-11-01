@@ -54,6 +54,48 @@ cp .env.example .env
 python app.py
 ```
 
+### Test on your phone over local Wi-Fi (Windows)
+
+Connect your phone and computer to the same Wi-Fi. After completing the setup
+above, run these commands in PowerShell from the project directory:
+
+```powershell
+$env:GRADIO_SERVER_NAME = '0.0.0.0'
+$env:GRADIO_SERVER_PORT = '7860'
+$env:GRADIO_SHARE = 'false'
+$env:PYTHONIOENCODING = 'utf-8'
+.\.venv\Scripts\python.exe -u app.py
+```
+
+`0.0.0.0` makes Gradio listen on all network interfaces, including Wi-Fi, instead
+of only localhost. Port `7860` is the app's HTTP port. `GRADIO_SHARE=false` keeps
+Gradio's public sharing tunnel disabled; no router port forwarding is needed.
+
+Find the computer's Wi-Fi IPv4 address in another PowerShell window:
+
+```powershell
+ipconfig
+```
+
+On your phone, open `http://<Wi-Fi IPv4 address>:7860`. For example, the address
+during our local test was **http://10.0.0.36:7860**. Your computer's address may
+change when it reconnects to the network. Use the actual address on the phone,
+not `localhost` or `0.0.0.0`.
+
+Keep the computer awake and the server running. Press `Ctrl+C` in the server
+terminal to stop it. If the phone cannot connect, check that both devices use the
+same Wi-Fi, that the network allows devices to communicate (guest Wi-Fi may not),
+and that Windows Firewall allows Python on your private network.
+
+You can check that the app responds from the computer with:
+
+```powershell
+(Invoke-WebRequest -Uri 'http://10.0.0.36:7860' -UseBasicParsing).StatusCode
+```
+
+Replace the address as needed; a successful response returns `200`. This checks
+the server's response, but the phone still needs network access to the computer.
+
 ## 🌐 Deployment
 
 ### Hugging Face Spaces
