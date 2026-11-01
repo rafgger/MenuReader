@@ -52,14 +52,19 @@ jobs:
     - name: Push to Hugging Face Spaces
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
-        HF_USERNAME: ${{ secrets.HF_USERNAME }}
-        HF_SPACE_NAME: ${{ secrets.HF_SPACE_NAME }}
+        HF_USERNAME: rafgger
+        HF_SPACE_NAME: MenuReader
       run: |
+        if [ -z "$HF_TOKEN" ]; then
+          echo "::error::Missing HF_TOKEN Actions secret. Add a Hugging Face token with write access to rafgger/MenuReader."
+          exit 1
+        fi
+
         git config --global user.email "action@github.com"
         git config --global user.name "GitHub Action"
         
         # Clone the Hugging Face Space repository
-        git clone https://huggingface.co/spaces/$HF_USERNAME/$HF_SPACE_NAME hf-space
+        git clone --branch main "https://huggingface.co/spaces/$HF_USERNAME/$HF_SPACE_NAME" hf-space
         
         # Copy files to HF space (excluding .git and other unnecessary files)
         rsync -av --exclude='.git' --exclude='hf-space' --exclude='.github' --exclude='tests' . hf-space/
@@ -71,5 +76,9 @@ jobs:
         
         # Commit and push changes
         git add .
-        git commit -m "Auto-deploy from GitHub: ${{ github.sha }}" || exit 0
+        if git diff --cached --quiet; then
+          echo "Space is already up to date."
+          exit 0
+        fi
+        git commit -m "Auto-deploy from GitHub: ${{ github.sha }}"
         git push origin main
