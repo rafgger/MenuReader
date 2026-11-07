@@ -10,6 +10,9 @@ import os
 import logging
 import tempfile
 import inspect
+import base64
+import io
+from pathlib import Path
 from typing import List, Tuple, Optional
 from PIL import Image, ImageOps
 import json
@@ -83,6 +86,34 @@ def process_menu_image(image: Image.Image) -> Tuple[str, str]:
     except Exception as e:
         logger.error(f"Error processing menu image: {e}", exc_info=True)
         return f"❌ **Error**: {str(e)}", "{}"
+
+
+def analyze_menu_with_status(image, camera_frame=""):
+    """Keep analysis feedback next to the camera on narrow phone screens."""
+    if camera_frame:
+        try:
+            if not camera_frame.startswith("data:image/jpeg;base64,"):
+                raise ValueError(camera_frame)
+            image = Image.open(io.BytesIO(base64.b64decode(camera_frame.split(",", 1)[1])))
+            image.load()
+        except Exception:
+            message = "Could not capture the camera. Wait for the live preview and try Analyze Menu again, or upload a photo."
+            yield message, f"<p>{message}</p>", "{}", gr.skip()
+            return
+    if image is None:
+        message = "Open the camera and wait for the live preview, or upload a photo. Then press Analyze Menu."
+        yield message, f"<p>{message}</p>", "{}", gr.skip()
+        return
+
+    # Publish the exact captured frame before starting the slow analysis call.
+    yield "Analyzing this photo. Please wait...", "<p>Analyzing your menu...</p>", "{}", image
+    html_output, json_output = process_menu_image(image)
+    result = json.loads(json_output)
+    if result.get("success"):
+        status = f"Analysis complete: found {result['dishes_found']} dishes. Scroll down to Analysis Results."
+    else:
+        status = "Analysis could not complete. See Analysis Results below for details."
+    yield status, html_output, json_output, gr.skip()
 
 
 def format_results_html(dishes: List[EnrichedDish], errors: List[ProcessingError]) -> str:
@@ -344,7 +375,10 @@ def create_gradio_interface():
                 gr.Markdown("### 📤 Upload Menu Image")
                 # Gradio 6 moved mirror_webcam into WebcamOptions.
                 camera_options = (
-                    {"webcam_options": gr.WebcamOptions(mirror=False)}
+                    {"webcam_options": gr.WebcamOptions(
+                        mirror=False,
+                        constraints={"video": {"facingMode": {"ideal": "environment"}}},
+                    )}
                     if "webcam_options" in inspect.signature(gr.Image).parameters
                     else {"mirror_webcam": False}
                 )
@@ -352,6 +386,8 @@ def create_gradio_interface():
                     label="Menu Photo",
                     type="pil",
                     height=400,
+                    elem_id="menu-camera",
+                    # Start in camera mode so the camera capture control is immediately visible.
                     sources=["webcam", "upload"],
                     **camera_options
                 )
@@ -361,6 +397,11 @@ def create_gradio_interface():
                     variant="primary",
                     size="lg"
                 )
+                analysis_status = gr.Markdown(
+                    "Point the camera at your menu and press Analyze Menu to take and analyze a photo. "
+                    "You can also upload a photo."
+                )
+                camera_frame = gr.Textbox(visible=False)
                 
                 # API Status
                 gr.Markdown("### 📊 System Status")
@@ -398,10 +439,12 @@ def create_gradio_interface():
         
         # Processing event
         process_btn.click(
-            fn=process_menu_image,
-            inputs=[image_input],
-            outputs=[results_output, json_output],
-            show_progress=True
+            fn=analyze_menu_with_status,
+            inputs=[image_input, camera_frame],
+            outputs=[analysis_status, results_output, json_output, image_input],
+            js=Path(__file__).with_name("camera_capture.js").read_text(encoding="utf-8"),
+            show_progress="full",
+            show_progress_on=[analysis_status, results_output]
         )
         
         # Footer
